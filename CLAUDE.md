@@ -27,7 +27,7 @@ bun run preview      # serve ./out locally to check the production build
   Color tokens (`--background`, `--muted`, `--accent`, …) are defined once there with a dark-mode override.
 - **Motion** (`motion/react`, formerly Framer Motion) for UI animation. Wrap scroll-in content with
   `<Reveal>` from `src/components/reveal.tsx` rather than hand-rolling `motion.div`s.
-- **three.js via React Three Fiber + drei** for the hero scene (`src/components/hero-scene.tsx`).
+- **three.js via React Three Fiber + drei** for the hero scene: a procedural stingray (`src/components/stingray.tsx`) placed by `hero-scene.tsx`.
 - **Biome** for lint + format (no ESLint/Prettier). **bun test** for unit tests.
 
 ## Layout
