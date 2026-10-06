@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --muted: #475569;
+  --accent: #3b5bdb;
+  --card: rgb(255 255 255 / 0.7);
+  --border: rgb(15 23 42 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #070a13;
+    --foreground: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #8ea8ff;
+    --card: rgb(15 23 42 / 0.55);
+    --border: rgb(148 163 184 / 0.14);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border p-6 backdrop-blur;
+    background: var(--card);
+    border-color: var(--border);
+  }
+
+  .chip {
+    @apply rounded-full border px-3 py-1 font-mono text-xs;
+    border-color: var(--border);
+  }
+
+  .link {
+    @apply underline decoration-current/30 underline-offset-4 transition-colors hover:decoration-current;
+  }
+
+  .btn {
+    @apply inline-flex items-center rounded-full border px-5 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+    border-color: var(--border);
+    background: var(--card);
+  }
+
+  .btn-primary {
+    @apply border-transparent text-white;
+    background: var(--accent);
+  }
+}

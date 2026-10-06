@@ -1,12 +1,12 @@
-# Welcome
+# rayhuang.us
 
-# How To Use
+Source for [rayhuang.us](https://rayhuang.us). It's built with Next.js (static export), Bun, Tailwind CSS v4, Motion and React Three Fiber, and deployed to GitHub Pages by GitHub Actions.
 
-- Clone this repos with `npm clone https://github.com/ray-cj-huang/ray-cj-huang.github.io.git`
-- Open the folder with `cd ray-cj-huang.github.io`
-- Install packages with `npm i`
-- Run locally with `npm start`
+```bash
+bun install
+bun dev
+```
 
-## Acknowledgement
+To change the site's text, edit [`src/content/site.ts`](src/content/site.ts). Run `bun run check` before you push. Every push to `main` deploys the site automatically.
 
-Website made from an awesome template created by [Harikrushn Kanani](https://github.com/harikanani)!
+See [CLAUDE.md](CLAUDE.md) for architecture and conventions.
