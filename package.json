@@ -30,7 +30,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^7"
   },
   "packageManager": "bun@1.4.2",
   "ignoreScripts": [
