@@ -12,19 +12,18 @@ export type Role = {
   end?: string; // omit for current roles
   location: string;
   summary: string;
-  highlights?: string[];
   accent: string; // brand color for the org name / monogram
 };
 
 export const site = {
   name: "Ray Huang",
-  handle: "ray / july",
+  handle: "ray / huang",
   url: "https://rayhuang.us",
-  tagline: "Software engineer in San Francisco, building voice AI for car dealerships at Toma.",
+  tagline: "Software engineer in San Francisco, building AI coworkers for car dealerships at Toma.",
   description: "Ray Huang — software engineer at Toma building AI coworkers for automotive dealerships.",
   email: "rayhuang.cj@gmail.com",
-  resumeUrl: "https://drive.google.com/file/d/1GT9pt8S3h6F4AT_cFgLbYqdHCdPxV_S8/view?usp=sharing",
   avatar: "/images/ray.jpg",
+  contactUrl: "https://www.linkedin.com/in/ray-cj-huang/", // "Get in touch" target
 } as const;
 
 export const socials: Link[] = [
@@ -40,15 +39,7 @@ export const work: Role[] = [
     orgUrl: "https://www.toma.com/",
     start: "Jun 2025",
     location: "San Francisco, CA",
-    summary:
-      "Toma builds AI coworkers for car dealerships — voice agents that answer every call, work every lead and book service and sales appointments.",
-    highlights: [
-      "Rebuilt the realtime voice pipeline on self-hosted Deepgram Flux with native turn detection, replacing VAD.",
-      "Migrated the monorepo to Bun workspaces + Turborepo, then Prisma v7, Tailwind v4 and a shared UI package.",
-      "Built the Inbox from MVP into a multi-rooftop CRM with RBAC, auto-assignment and auto-resolution.",
-      "Integrated dealer systems — Reynolds, CDK, Tekion, xTime, DealerFX, PBS — for AI appointment booking.",
-      "Shipped outbound campaigns on Temporal, SFTP data feeds and vehicle inventory ingestion. 500+ PRs merged.",
-    ],
+    summary: "Building AI coworkers for car dealerships.",
     accent: "#14b8a6",
   },
   {
@@ -58,7 +49,7 @@ export const work: Role[] = [
     start: "May 2025",
     end: "Jun 2025",
     location: "San Francisco, CA",
-    summary: "Built the platform for affiliate networks.",
+    summary: "Built a platform for affiliate networks.",
     accent: "#f97316",
   },
   {
@@ -68,7 +59,7 @@ export const work: Role[] = [
     start: "Aug 2023",
     end: "Apr 2025",
     location: "Mountain View, CA",
-    summary: "Built Copilot automation and reduced COGS in PowerPoint.",
+    summary: "Worked on Copilot in PowerPoint.",
     accent: "#0078d4",
   },
   {
@@ -87,7 +78,7 @@ export const work: Role[] = [
     start: "Jun 2022",
     end: "Sep 2022",
     location: "Redmond, WA",
-    summary: "Drove Microsoft 365 user acquisition.",
+    summary: "Worked on Microsoft 365 growth.",
     accent: "#0078d4",
   },
   {
@@ -98,7 +89,7 @@ export const work: Role[] = [
     start: "Jun 2021",
     end: "Sep 2021",
     location: "Seattle, WA",
-    summary: "Built internal investigation tools for the Book Ads team.",
+    summary: "Built internal tools for Book Ads.",
     accent: "#ff9900",
   },
   {
@@ -109,7 +100,7 @@ export const work: Role[] = [
     start: "Jun 2020",
     end: "Sep 2020",
     location: "Seattle, WA (Remote)",
-    summary: "Built data validation for the Book Ads team.",
+    summary: "Built data validation for Book Ads.",
     accent: "#ff9900",
   },
 ];

@@ -44,11 +44,8 @@ export function Hero() {
           <p className="mt-6 max-w-md text-lg text-muted sm:text-xl">{site.tagline}</p>
         </Reveal>
         <Reveal delay={0.2} className="mt-10 flex flex-wrap gap-3">
-          <a className="btn btn-primary" href={`mailto:${site.email}`}>
+          <a className="btn btn-primary" href={site.contactUrl} target="_blank" rel="noreferrer">
             Get in touch
-          </a>
-          <a className="btn" href={site.resumeUrl} target="_blank" rel="noreferrer">
-            Résumé
           </a>
         </Reveal>
       </div>
@@ -103,13 +100,6 @@ function RoleCard({ role }: { role: Role }) {
           {role.start} – {role.end ?? "Present"} · {role.location}
         </p>
         <p className="mt-3 leading-relaxed">{role.summary}</p>
-        {role.highlights && (
-          <ul className="mt-3 list-disc space-y-1 pl-5">
-            {role.highlights.map((h) => (
-              <li key={h}>{h}</li>
-            ))}
-          </ul>
-        )}
       </div>
     </article>
   );

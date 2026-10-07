@@ -20,7 +20,7 @@ describe("site content", () => {
   test("all external links are https", () => {
     const urls = [
       site.url,
-      site.resumeUrl,
+      site.contactUrl,
       ...socials.map((s) => s.href),
       ...work.flatMap((r) => (r.orgUrl ? [r.orgUrl] : [])),
       ...education.map((e) => e.url),
