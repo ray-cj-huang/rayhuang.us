@@ -133,5 +133,17 @@ export const education = [
     degree: "B.S. Computer Science",
     logo: "/images/ucla.png",
     url: "https://www.cs.ucla.edu/",
+    honors: [
+      {
+        title: "Regents Scholar",
+        detail: "UCLA's most prestigious undergraduate merit scholarship",
+        year: "2019",
+      },
+      {
+        title: "Amazon Future Engineer Scholar",
+        detail: "Inaugural class — $40K for computer science plus an Amazon internship",
+        year: "2019",
+      },
+    ],
   },
 ];

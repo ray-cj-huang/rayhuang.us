@@ -154,20 +154,35 @@ export function Education() {
   return (
     <Section id="education" title="Education" className="pb-8">
       {education.map((ed) => (
-        <Reveal key={ed.school} className="card flex items-center gap-4 py-4">
-          <Image
-            src={ed.logo}
-            alt=""
-            width={40}
-            height={40}
-            className="size-10 shrink-0 rounded-lg bg-white object-contain p-1"
-          />
-          <p>
-            <a href={ed.url} target="_blank" rel="noreferrer" className="link font-medium">
-              {ed.school}
-            </a>
-            <span className="text-muted"> · {ed.degree}</span>
-          </p>
+        <Reveal key={ed.school} className="card py-4">
+          <div className="flex items-center gap-4">
+            <Image
+              src={ed.logo}
+              alt=""
+              width={40}
+              height={40}
+              className="size-10 shrink-0 rounded-lg bg-white object-contain p-1"
+            />
+            <p>
+              <a href={ed.url} target="_blank" rel="noreferrer" className="link font-medium">
+                {ed.school}
+              </a>
+              <span className="text-muted"> · {ed.degree}</span>
+            </p>
+          </div>
+          {ed.honors.length > 0 && (
+            <ul className="mt-3 space-y-1 pl-14 text-sm">
+              {ed.honors.map((h) => (
+                <li key={h.title}>
+                  <span className="font-medium">{h.title}</span>
+                  <span className="text-muted">
+                    {" "}
+                    · {h.detail} · {h.year}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Reveal>
       ))}
     </Section>
