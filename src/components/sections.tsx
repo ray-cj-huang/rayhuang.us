@@ -3,9 +3,23 @@ import type { ReactNode } from "react";
 import { Reveal } from "@/components/reveal";
 import { education, type Role, site, skills, socials, work } from "@/content/site";
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  className = "",
+  children,
+}: {
+  id: string;
+  title: string;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="mx-auto w-full max-w-4xl px-6 py-20">
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className={`mx-auto w-full max-w-4xl px-6 py-20 ${className}`}
+    >
       <Reveal>
         <h2 id={`${id}-title`} className="mb-10 font-mono text-sm uppercase tracking-[0.2em] text-accent">
           {title}
@@ -138,29 +152,22 @@ export function Skills() {
 
 export function Education() {
   return (
-    <Section id="education" title="Education">
+    <Section id="education" title="Education" className="pb-8">
       {education.map((ed) => (
-        <Reveal key={ed.school} className="card flex gap-5">
+        <Reveal key={ed.school} className="card flex items-center gap-4 py-4">
           <Image
             src={ed.logo}
             alt=""
-            width={48}
-            height={48}
-            className="size-12 shrink-0 rounded-lg bg-white object-contain p-1"
+            width={40}
+            height={40}
+            className="size-10 shrink-0 rounded-lg bg-white object-contain p-1"
           />
-          <div>
-            <h3 className="font-medium">
-              <a href={ed.url} target="_blank" rel="noreferrer" className="link">
-                {ed.school}
-              </a>
-            </h3>
-            <p className="text-sm text-muted">{ed.degree}</p>
-            <ul className="mt-3 list-disc space-y-1 pl-5">
-              {ed.notes.map((n) => (
-                <li key={n}>{n}</li>
-              ))}
-            </ul>
-          </div>
+          <p>
+            <a href={ed.url} target="_blank" rel="noreferrer" className="link font-medium">
+              {ed.school}
+            </a>
+            <span className="text-muted"> · {ed.degree}</span>
+          </p>
         </Reveal>
       ))}
     </Section>
@@ -169,7 +176,7 @@ export function Education() {
 
 export function Contact() {
   return (
-    <footer id="contact" className="mx-auto w-full max-w-4xl px-6 pt-20 pb-16">
+    <footer id="contact" className="mx-auto w-full max-w-4xl px-6 pt-8 pb-16">
       <Reveal className="card flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         <Image
           src={site.avatar}

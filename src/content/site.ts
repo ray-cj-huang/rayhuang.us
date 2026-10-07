@@ -133,6 +133,5 @@ export const education = [
     degree: "B.S. Computer Science",
     logo: "/images/ucla.png",
     url: "https://www.cs.ucla.edu/",
-    notes: ["Led LA Blueprint (EVP), Bruin Entrepreneurs (Tech Director) and ACM at UCLA."],
   },
 ];
