@@ -26,7 +26,7 @@ export const site = {
   description: "Ray Huang — software engineer at Toma building AI coworkers for automotive dealerships.",
   email: "rayhuang.cj@gmail.com",
   resumeUrl: "https://drive.google.com/file/d/1GT9pt8S3h6F4AT_cFgLbYqdHCdPxV_S8/view?usp=sharing",
-  avatar: "/images/ray.jpeg",
+  avatar: "/images/ray.jpg",
 } as const;
 
 export const socials: Link[] = [
