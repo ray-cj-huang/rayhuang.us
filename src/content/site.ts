@@ -19,7 +19,7 @@ export const site = {
   name: "Ray Huang",
   handle: "ray / huang",
   url: "https://rayhuang.us",
-  tagline: "Software engineer in San Francisco, building AI coworkers for car dealerships at Toma.",
+  tagline: "Another day, another life :)",
   description: "Ray Huang — software engineer at Toma building AI coworkers for automotive dealerships.",
   email: "rayhuang.cj@gmail.com",
   avatar: "/images/ray.jpg",
