@@ -27,7 +27,8 @@ bun run preview      # serve ./out locally to check the production build
   Color tokens (`--background`, `--muted`, `--accent`, …) are defined once there with a dark-mode override.
 - **Motion** (`motion/react`, formerly Framer Motion) for UI animation. Wrap scroll-in content with
   `<Reveal>` from `src/components/reveal.tsx` rather than hand-rolling `motion.div`s.
-- **three.js via React Three Fiber + drei** for the hero scene: a procedural stingray (`src/components/stingray.tsx`) placed by `hero-scene.tsx`.
+- **three.js via React Three Fiber + drei** for the hero scene: a procedural stingray (`src/components/stingray.tsx`) on a fixed full-page canvas that
+  slowly follows the mouse (desktop only; touch input is ignored). It is not draggable.
 - **Biome** for lint + format (no ESLint/Prettier). **bun test** for unit tests.
 
 ## Layout
@@ -35,7 +36,7 @@ bun run preview      # serve ./out locally to check the production build
 ```
 src/
   app/            routes, layout, metadata, sitemap/robots, globals.css
-  components/     sections.tsx (server), reveal.tsx + hero-*.tsx (client)
+  components/     sections.tsx (server), reveal.tsx, scene-backdrop.tsx, hero-scene.tsx, stingray.tsx (client)
   content/site.ts ALL copy, links and roles — edit here, not in components
 public/           static assets; CNAME must stay `rayhuang.us`
 ```
@@ -45,7 +46,7 @@ public/           static assets; CNAME must stay `rayhuang.us`
 - Components are Server Components by default. Add `"use client"` only to leaf components that need
   hooks, browser APIs, Motion, or three.js.
 - three.js must never render on the server: import 3D scenes through `next/dynamic` with `ssr: false`
-  from a client wrapper (see `hero-canvas.tsx`). Keep the scene cheap — capped `dpr`, low-power GL,
+  from a client wrapper (see `scene-backdrop.tsx`). Keep the scene cheap — capped `dpr`, low-power GL,
   no heavy postprocessing — it's decoration.
 - Respect `prefers-reduced-motion`: use Motion's `useReducedMotion()`; the 3D scene goes still and
   `<Reveal>` skips its entrance animation.

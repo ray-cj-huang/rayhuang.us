@@ -1,6 +1,5 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { HeroCanvas } from "@/components/hero-canvas";
 import { Reveal } from "@/components/reveal";
 import { education, type Role, site, skills, socials, work } from "@/content/site";
 
@@ -19,8 +18,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 export function Hero() {
   return (
-    <header className="relative isolate flex min-h-[92svh] items-center overflow-hidden">
-      <HeroCanvas />
+    <header className="flex min-h-[92svh] items-end pb-16 md:items-center md:pb-0">
       <div className="mx-auto w-full max-w-4xl px-6">
         <Reveal>
           <p className="font-mono text-sm text-muted">{site.handle}</p>
