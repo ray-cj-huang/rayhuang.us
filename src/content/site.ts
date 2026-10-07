@@ -16,8 +16,6 @@ export type Role = {
   accent: string; // brand color for the org name / monogram
 };
 
-export type SkillGroup = { title: string; items: string[] };
-
 export const site = {
   name: "Ray Huang",
   handle: "ray / july",
@@ -33,17 +31,6 @@ export const socials: Link[] = [
   { label: "GitHub", href: "https://github.com/ray-cj-huang" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/ray-cj-huang/" },
   { label: "Instagram", href: "https://www.instagram.com/ray._.huang/" },
-];
-
-export const skills: SkillGroup[] = [
-  {
-    title: "Engineering",
-    items: ["TypeScript", "React", "Bun", "Turborepo", "tRPC", "Prisma", "Postgres", "Temporal", "AWS"],
-  },
-  {
-    title: "Voice & AI",
-    items: ["Deepgram", "Realtime STT / TTS", "Twilio", "LLM function calling", "OpenAI", "Gemini", "Claude"],
-  },
 ];
 
 export const work: Role[] = [
@@ -133,17 +120,6 @@ export const education = [
     degree: "B.S. Computer Science",
     logo: "/images/ucla.png",
     url: "https://www.cs.ucla.edu/",
-    honors: [
-      {
-        title: "Regents Scholar",
-        detail: "UCLA's most prestigious undergraduate merit scholarship",
-        year: "2019",
-      },
-      {
-        title: "Amazon Future Engineer Scholar",
-        detail: "Inaugural class — $40K for computer science plus an Amazon internship",
-        year: "2019",
-      },
-    ],
+    honors: ["Regents Scholar", "Amazon Future Engineer Scholar"],
   },
 ];

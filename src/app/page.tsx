@@ -1,5 +1,5 @@
 import { SceneBackdrop } from "@/components/scene-backdrop";
-import { Contact, Education, Experience, Hero, Skills } from "@/components/sections";
+import { Contact, Education, Experience, Hero } from "@/components/sections";
 
 export default function Home() {
   return (
@@ -8,7 +8,6 @@ export default function Home() {
       <Hero />
       <main>
         <Experience />
-        <Skills />
         <Education />
       </main>
       <Contact />

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/reveal";
-import { education, type Role, site, skills, socials, work } from "@/content/site";
+import { education, type Role, site, socials, work } from "@/content/site";
 
 function Section({
   id,
@@ -129,27 +129,6 @@ export function Experience() {
   );
 }
 
-export function Skills() {
-  return (
-    <Section id="skills" title="Skills">
-      <div className="grid gap-5 sm:grid-cols-2">
-        {skills.map((group, i) => (
-          <Reveal key={group.title} delay={i * 0.08} className="card">
-            <h3 className="mb-4 font-medium">{group.title}</h3>
-            <ul className="flex flex-wrap gap-2">
-              {group.items.map((item) => (
-                <li key={item} className="chip">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
 export function Education() {
   return (
     <Section id="education" title="Education" className="pb-8">
@@ -170,19 +149,7 @@ export function Education() {
               <span className="text-muted"> · {ed.degree}</span>
             </p>
           </div>
-          {ed.honors.length > 0 && (
-            <ul className="mt-3 space-y-1 pl-14 text-sm">
-              {ed.honors.map((h) => (
-                <li key={h.title}>
-                  <span className="font-medium">{h.title}</span>
-                  <span className="text-muted">
-                    {" "}
-                    · {h.detail} · {h.year}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {ed.honors.length > 0 && <p className="mt-2 pl-14 text-sm text-muted">{ed.honors.join(" · ")}</p>}
         </Reveal>
       ))}
     </Section>
