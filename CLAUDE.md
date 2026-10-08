@@ -34,9 +34,11 @@ Project skills live in `.claude/skills/`. Use them:
 - **Motion** (`motion/react`) for UI animation.
   Wrap scroll-in content in `<Reveal>` from `src/components/reveal.tsx` instead of hand-rolling `motion.div`s.
 - **three.js via React Three Fiber and drei** for a fixed, full-page ocean (`src/components/ocean/`).
-  The water deepens from sunlit aqua to navy as you scroll, with god rays, caustics and marine snow.
+  It models a Caribbean sand flat beside a patch reef, where southern stingrays live.
+  Scrolling descends: the water deepens and the view tilts toward the seafloor, with god rays, caustics and marine snow.
   A procedural stingray drifts near and far and slowly follows the mouse on desktop; it ignores touch and is not draggable.
-  A boids-driven fish school flocks and swerves away from the ray.
+  Species and behaviors are researched, not invented: bar jacks shadow the ray, bluehead wrasse clean it at a coral
+  station, and French grunts and blue chromis school by the reef and shy away from it. Don't add freshwater species.
 - **Biome** for lint and format (no ESLint or Prettier). **bun test** for unit tests.
 
 ## Layout
@@ -45,8 +47,8 @@ Project skills live in `.claude/skills/`. Use them:
 src/
   app/            routes, layout, metadata, sitemap/robots, globals.css
   components/     sections.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
-  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school, light-rays, marine-snow;
-                  pure, unit-tested logic in boids.ts and palette.ts
+  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef, light-rays, marine-snow;
+                  pure, unit-tested logic in boids.ts and palette.ts; seeded layout via random.ts
   content/site.ts all copy, links and roles; edit here, not in components
 public/           static assets; CNAME must stay `rayhuang.us`
 .claude/skills/   project skills (see above)

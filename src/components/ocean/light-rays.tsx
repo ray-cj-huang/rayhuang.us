@@ -3,6 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { AdditiveBlending, type Group, MathUtils, ShaderMaterial } from "three";
+import { CAUSTIC_GLSL } from "./glsl";
 import { getScrollDepth } from "./scroll-depth";
 
 const SHAFTS = [
@@ -83,20 +84,16 @@ export function Caustics({ still }: { still: boolean }) {
             vUv = uv;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`,
-        // Domain-warped sine ridges: cheap, and reads as the web of light from surface ripples.
         fragmentShader: `
           uniform float uOpacity;
           uniform float uTime;
           uniform float uAspect;
           varying vec2 vUv;
-          float ridge(float v) { return pow(1.0 - abs(sin(v)), 6.0); }
+          ${CAUSTIC_GLSL}
           void main() {
-            vec2 p = vUv * vec2(uAspect, 1.0) * 7.0;
-            p += 0.45 * vec2(sin(p.y * 1.3 + uTime * 0.5), cos(p.x * 1.1 - uTime * 0.4));
-            float c = ridge(p.x * 1.7 + uTime * 0.6) + ridge(p.y * 1.9 - uTime * 0.5)
-              + ridge((p.x + p.y) * 1.3 + uTime * 0.45);
+            float c = caustic(vUv * vec2(uAspect, 1.0) * 7.0, uTime);
             float top = smoothstep(0.1, 1.0, vUv.y);
-            gl_FragColor = vec4(vec3(0.9, 0.98, 1.0), (c / 3.0) * top * uOpacity);
+            gl_FragColor = vec4(vec3(0.9, 0.98, 1.0), c * top * uOpacity);
           }`,
         transparent: true,
         depthWrite: false,
@@ -107,7 +104,8 @@ export function Caustics({ still }: { still: boolean }) {
   );
 
   const distance = 11;
-  const height = 2 * distance * Math.tan(MathUtils.degToRad(45 / 2)) * 1.1;
+  // Oversized so the camera's scroll tilt never reveals an edge.
+  const height = 2 * distance * Math.tan(MathUtils.degToRad(45 / 2)) * 1.8;
   const width = height * (viewport.aspect || 1);
 
   useFrame(({ clock }) => {

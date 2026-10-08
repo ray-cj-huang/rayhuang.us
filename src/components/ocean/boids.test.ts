@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createFlock, type FlockParams, stepFlock } from "./boids";
+import { seeded } from "./random";
 
 const params: FlockParams = {
   minSpeed: 0.3,
@@ -15,15 +16,6 @@ const params: FlockParams = {
   goal: [0, 0, -1],
   goalWeight: 0.05,
 };
-
-/** Deterministic PRNG so failures reproduce. */
-function seeded(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 1664525 + 1013904223) % 2 ** 32;
-    return s / 2 ** 32;
-  };
-}
 
 function simulate(steps: number, onStep: (flock: ReturnType<typeof createFlock>) => void) {
   const flock = createFlock(36, params.bounds, seeded(7));

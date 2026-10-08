@@ -117,7 +117,7 @@ function cruisingDepth(t: number) {
   );
 }
 
-function useSwimPath(still: boolean, worldPosition?: Vector3) {
+function useSwimPath(still: boolean, worldPosition?: Vector3, minWorldY = Number.NEGATIVE_INFINITY) {
   const follow = useRef<Group>(null);
   const { camera } = useThree();
   const state = useMemo(
@@ -162,6 +162,7 @@ function useSwimPath(still: boolean, worldPosition?: Vector3) {
       state.plane.constant = -state.world.z;
       state.raycaster.setFromCamera(state.ndc, camera);
       if (state.raycaster.ray.intersectPlane(state.plane, state.hit)) {
+        state.hit.y = Math.max(state.hit.y, minWorldY);
         g.parent.worldToLocal(state.hit);
         state.target.x = state.hit.x;
         state.target.y = state.hit.y;
@@ -198,13 +199,22 @@ function useSwimPath(still: boolean, worldPosition?: Vector3) {
  *
  * @param still - Freeze the animation, for `prefers-reduced-motion`.
  * @param worldPosition - Receives the ray's world position every frame, e.g. for fish to avoid.
+ * @param minWorldY - Lowest world y it will follow the cursor to, to keep it above the seafloor.
  */
-export function Stingray({ still = false, worldPosition }: { still?: boolean; worldPosition?: Vector3 }) {
+export function Stingray({
+  still = false,
+  worldPosition,
+  minWorldY,
+}: {
+  still?: boolean;
+  worldPosition?: Vector3;
+  minWorldY?: number;
+}) {
   const swim = useRef<Group>(null);
   const finPhase = useRef(0);
   const body = useMemo(buildBody, []);
   const tail = useMemo(buildTail, []);
-  const { follow, motion } = useSwimPath(still, worldPosition);
+  const { follow, motion } = useSwimPath(still, worldPosition, minWorldY);
 
   useFrame(({ clock }, delta) => {
     const t = still ? 0.6 : clock.elapsedTime;

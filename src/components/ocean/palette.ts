@@ -4,16 +4,16 @@ type Stop = readonly [depth: number, hex: string];
 
 export const LIGHT_WATER: readonly Stop[] = [
   [0, "#d9f2fb"],
-  [0.3, "#7cc4e0"],
-  [0.65, "#2b6f9e"],
-  [1, "#0a2342"],
+  [0.3, "#8fd0e6"],
+  [0.65, "#3b88b5"],
+  [1, "#134a73"],
 ];
 
 export const DARK_WATER: readonly Stop[] = [
   [0, "#1d4f6e"],
   [0.35, "#123a5a"],
   [0.7, "#0a2440"],
-  [1, "#040f1f"],
+  [1, "#06223a"],
 ];
 
 function hexToRgb(hex: string): Rgb {
@@ -35,5 +35,6 @@ export function waterColorAt(depth: number, stops: readonly Stop[] = LIGHT_WATER
   const t = (d - fromAt) / (toAt - fromAt);
   const from = hexToRgb(fromHex);
   const to = hexToRgb(toHex);
+  if (t >= 1) return to;
   return [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t];
 }
