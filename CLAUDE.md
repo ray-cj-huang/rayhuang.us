@@ -39,6 +39,12 @@ Project skills live in `.claude/skills/`. Use them:
   Scrolling descends: turquoise shallows deepen to ocean blue and the view tilts toward the sand.
   A procedural stingray drifts near and far, slowly follows the mouse on desktop (never touch), and casts a soft shadow.
   Fish never follow the cursor: a baitfish ball and a few French grunts school on their own and avoid the ray.
+- **Schooling follows published models, not classic boids.** `boids.ts` uses Couzin's zones (repulsion first,
+  then alignment and attraction), a few nearest neighbors, a blind zone behind each fish, limited turn rate,
+  acceleration and pitch, per-fish pace, and a startle burst near the ray (flash expansion / fountain effect).
+- **Sand detail lives in the shader** (`sand.ts`): ripples are ~0.4 units (about 25 cm) apart, far too fine to model,
+  so they're drawn as asymmetric normal ripples with forks, plus grain, trough detritus and caustics.
+  In GLSL, avoid reserved words such as `patch`, `sample` and `input` as identifiers.
 - **Nothing passes through anything.** `boids.ts` steers fish around ellipsoid obstacles (the ray, coral heads,
   seaweed) and then enforces it with hard constraints, plus a minimum fish-to-fish distance.
   The two species swim in separate height bands, and the ray rises over coral heads instead of entering them.
@@ -50,7 +56,7 @@ Project skills live in `.claude/skills/`. Use them:
 src/
   app/            routes, layout, metadata, sitemap/robots, globals.css
   components/     sections.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
-  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef + layout, light-rays, marine-snow;
+  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef + sand + layout, light-rays, marine-snow;
                   pure, unit-tested logic in boids.ts and palette.ts; seeded layout via random.ts
   content/site.ts all copy, links and roles; edit here, not in components
 public/           static assets; CNAME must stay `rayhuang.us`

@@ -104,4 +104,52 @@ describe("stepFlock", () => {
       }
     }
   });
+
+  test("never turns faster than the max turn rate", () => {
+    const realistic = { ...params, maxTurnRate: 3, maxPitch: 0.35, maxAccel: 2 };
+    const flock = createFlock(36, params.bounds, seeded(4));
+    const dt = 1 / 60;
+    for (let s = 0; s < 600; s++) {
+      const before = Float32Array.from(flock.velocity);
+      stepFlock(flock, realistic, dt);
+      for (let i = 0; i < flock.count; i++) {
+        const a = [before[i * 3], before[i * 3 + 1], before[i * 3 + 2]];
+        const b = [flock.velocity[i * 3], flock.velocity[i * 3 + 1], flock.velocity[i * 3 + 2]];
+        // Wall bounces reflect velocity outright; only check steering turns away from the walls.
+        const nearWall = [0, 1, 2].some((ax) => {
+          const v = flock.position[i * 3 + ax];
+          return v <= params.bounds.min[ax] + 1e-4 || v >= params.bounds.max[ax] - 1e-4;
+        });
+        if (nearWall) continue;
+        const cos = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (Math.hypot(...a) * Math.hypot(...b));
+        expect(Math.acos(Math.min(1, cos))).toBeLessThanOrEqual(3 * dt + 1e-3);
+      }
+    }
+  });
+
+  test("keeps fish swimming mostly level", () => {
+    const flock = createFlock(36, params.bounds, seeded(6));
+    for (let s = 0; s < 600; s++) stepFlock(flock, { ...params, maxPitch: 0.35, maxTurnRate: 3 }, 1 / 60);
+    for (let i = 0; i < flock.count; i++) {
+      const v = [flock.velocity[i * 3], flock.velocity[i * 3 + 1], flock.velocity[i * 3 + 2]];
+      const atWall =
+        flock.position[i * 3 + 1] <= params.bounds.min[1] + 1e-4 ||
+        flock.position[i * 3 + 1] >= params.bounds.max[1] - 1e-4;
+      if (!atWall) expect(Math.abs(v[1]) / Math.hypot(...v)).toBeLessThanOrEqual(0.35 + 0.02);
+    }
+  });
+
+  test("startled fish burst faster than cruising speed", () => {
+    const flock = {
+      count: 1,
+      position: new Float32Array([0.2, 0, -1]),
+      velocity: new Float32Array([0.5, 0, 0]),
+    };
+    const threat = { position: [0, 0, -1] as [number, number, number], radius: 1, weight: 20 };
+    for (let s = 0; s < 10; s++)
+      stepFlock(flock, { ...params, goal: undefined, threat, maxAccel: 2 }, 1 / 60);
+    expect(Math.hypot(flock.velocity[0], flock.velocity[1], flock.velocity[2])).toBeGreaterThan(
+      params.maxSpeed,
+    );
+  });
 });

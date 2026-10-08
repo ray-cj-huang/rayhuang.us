@@ -16,6 +16,9 @@ export type Species = {
    */
   shade: Shading;
   fin: string;
+  /** Silvery schooling fish are highly reflective; reef fish are matte. */
+  metalness: number;
+  roughness: number;
   /** Tail beats per second when cruising; faster fish beat faster. */
   tailBeat: number;
   count: { desktop: number; mobile: number };
@@ -29,21 +32,34 @@ export const BAITFISH: Species = {
   length: 0.17,
   height: 0.026,
   width: 0.5,
-  shade: (back) => c("#eef4f7").lerp(c("#3f6383"), Math.max(0, (back + 0.2) / 1.2)),
+  // Dark blue-green back, a faint iridescent band, then mirror-silver flanks and belly, as on sardines.
+  shade: (back) =>
+    back > 0.55
+      ? c("#24485f")
+      : back > 0.35
+        ? c("#3f8a8c")
+        : c("#f1f5f7").lerp(c("#b9c7d1"), Math.max(0, back + 0.4)),
   fin: "#9fb4c6",
+  metalness: 0.75,
+  roughness: 0.22,
   tailBeat: 3.4,
   count: { desktop: 90, mobile: 36 },
   flock: {
     minSpeed: 0.6,
     maxSpeed: 1.7,
-    neighborRadius: 1,
-    separationRadius: 0.17,
+    neighborRadius: 1.6,
+    separationRadius: 0.15,
     separation: 8,
-    alignment: 2.2,
-    cohesion: 1.6,
+    alignment: 2.4,
+    cohesion: 2.6,
     bounds: { min: [-7, FLOOR_Y + 1.6, -11], max: [7, 1.8, -2] },
     boundsMargin: 0.6,
     boundsWeight: 2,
+    neighbors: 7,
+    blindAngle: 0.5,
+    maxTurnRate: 4,
+    maxAccel: 2.5,
+    maxPitch: 0.3,
   },
 };
 
@@ -57,6 +73,8 @@ export const FRENCH_GRUNT: Species = {
     return stripe ? c("#4f7bb8") : c("#f7d774").lerp(c("#f0b92a"), (back + 1) / 2);
   },
   fin: "#e6a91c",
+  metalness: 0.1,
+  roughness: 0.5,
   tailBeat: 2.2,
   count: { desktop: 9, mobile: 5 },
   flock: {
@@ -70,5 +88,10 @@ export const FRENCH_GRUNT: Species = {
     bounds: { min: [-8, FLOOR_Y + 0.2, -12], max: [8, FLOOR_Y + 1.3, -5] },
     boundsMargin: 0.4,
     boundsWeight: 2,
+    neighbors: 5,
+    blindAngle: 0.5,
+    maxTurnRate: 2.5,
+    maxAccel: 1.5,
+    maxPitch: 0.25,
   },
 };

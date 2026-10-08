@@ -9,12 +9,14 @@ import {
   Color,
   CylinderGeometry,
   DoubleSide,
+  Euler,
   type Group,
   IcosahedronGeometry,
+  InstancedMesh,
+  Matrix4,
   type Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
-  PlaneGeometry,
   Quaternion,
   SphereGeometry,
   Vector3,
@@ -23,6 +25,7 @@ import { mergeGeometries, mergeVertices } from "three/addons/utils/BufferGeometr
 import { CAUSTIC_GLSL } from "./glsl";
 import { BOMMIES, FLOOR_Y, TUFTS } from "./layout";
 import { seeded } from "./random";
+import { buildSandGeometry, buildSandMaterial, SAND_POSITION, sandHeight } from "./sand";
 import { getScrollDepth } from "./scroll-depth";
 
 type Rand = () => number;
@@ -53,22 +56,6 @@ function bare(geometry: BufferGeometry) {
 function finish(parts: BufferGeometry[]) {
   // Re-weld shared vertices so normals average across faces; otherwise every surface renders faceted.
   const geometry = mergeVertices(mergeGeometries(parts), 1e-4);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function buildSand() {
-  const geometry = new PlaneGeometry(70, 46, 220, 140);
-  geometry.rotateX(-Math.PI / 2);
-  const position = geometry.getAttribute("position");
-  for (let i = 0; i < position.count; i++) {
-    const x = position.getX(i);
-    const z = position.getZ(i);
-    // Broad, sinuous ripple ridges over gentle dunes, like current-swept sand in clear shallows.
-    const ripples = 0.07 * Math.sin(x * 1.3 + 1.4 * Math.sin(z * 0.33) + 0.5 * Math.sin(x * 0.4));
-    const dunes = 0.2 * Math.sin(x * 0.17 + z * 0.11) * Math.sin(z * 0.23 - x * 0.04);
-    position.setY(i, ripples + dunes);
-  }
   geometry.computeVertexNormals();
   return geometry;
 }
@@ -178,7 +165,19 @@ function buildBommie(rand: Rand, radius: number, height: number) {
   rock.scale(radius, height * 0.55, radius);
   const stone = new Color("#a39a86");
   const algae = new Color("#7f8f62");
-  parts.push(paint(rock, (p) => stone.clone().lerp(algae, Math.min(1, Math.max(0, p.y / (height * 0.5))))));
+  const shade = new Color("#6f675a");
+  parts.push(
+    paint(rock, (p) => {
+      // Mottled rock: low-frequency blotches of darker stone, with turf algae on the sunlit top.
+      const blotch =
+        0.5 + 0.5 * Math.sin(p.x * 4.1 + Math.sin(p.z * 3.3) * 2) * Math.sin(p.z * 3.7 - p.y * 2.9);
+      const top = Math.min(1, Math.max(0, p.y / (height * 0.5)));
+      return stone
+        .clone()
+        .lerp(shade, blotch * 0.5)
+        .lerp(algae, top * 0.8);
+    }),
+  );
 
   const brain = brainCoral(radius * 0.45);
   brain.translate(radius * 0.15, height * 0.45, 0);
@@ -235,17 +234,18 @@ export type RayState = {
   scale: number;
 };
 
-/** The stingray's soft shadow on the sand, directly below it since the sun is overhead. */
-function RayShadow({ ray }: { ray: RayState }) {
+type ShadowPose = { x: number; z: number; width: number; depth: number; angle: number; opacity: number };
+
+/** A soft shadow blob on the sand, re-posed every frame; the sun is overhead, so shadows fall straight down. */
+function SoftShadow({ pose }: { pose: () => ShadowPose }) {
   const mesh = useRef<Mesh>(null);
-  const material = useMemo(
+  const shadowMaterial = useMemo(
     () =>
       new MeshBasicMaterial({
         map: softShadowTexture(),
         color: "#0e4a5a",
         transparent: true,
         depthWrite: false,
-        opacity: 0.3,
       }),
     [],
   );
@@ -253,56 +253,128 @@ function RayShadow({ ray }: { ray: RayState }) {
   useFrame(() => {
     const m = mesh.current;
     if (!m) return;
-    const height = Math.max(0, ray.position.y - FLOOR_Y);
-    // Higher above the sand, the shadow spreads wider and fades, as with a real overhead sun.
-    const spread = 1 + height * 0.18;
-    m.position.set(ray.position.x + 0.3, FLOOR_Y + 0.12, ray.position.z);
-    m.scale.set(3.4 * ray.scale * spread, 2 * ray.scale * spread, 1);
-    m.rotation.z = Math.atan2(-ray.span.z, ray.span.x);
-    material.opacity = 0.32 * Math.max(0, 1 - height / 6);
+    const s = pose();
+    m.position.set(s.x, sandHeight(s.x, s.z) + 0.03, s.z);
+    m.scale.set(s.width, s.depth, 1);
+    m.rotation.z = s.angle;
+    shadowMaterial.opacity = s.opacity;
   });
 
   return (
-    <mesh ref={mesh} rotation={[-Math.PI / 2, 0, 0]} material={material}>
+    <mesh ref={mesh} rotation={[-Math.PI / 2, 0, 0]} material={shadowMaterial} renderOrder={1}>
       <planeGeometry args={[1, 1]} />
     </mesh>
   );
+}
+
+function rayShadow(ray: RayState): ShadowPose {
+  const height = Math.max(0, ray.position.y - FLOOR_Y);
+  // Higher above the sand, the shadow spreads wider and fades.
+  const spread = 1 + height * 0.18;
+  return {
+    x: ray.position.x + 0.3,
+    z: ray.position.z,
+    width: 3.4 * ray.scale * spread,
+    depth: 2 * ray.scale * spread,
+    angle: Math.atan2(-ray.span.z, ray.span.x),
+    opacity: 0.32 * Math.max(0, 1 - height / 6),
+  };
+}
+
+function schoolShadow(center: Vector3): ShadowPose {
+  const height = Math.max(0, center.y - FLOOR_Y);
+  return {
+    x: center.x,
+    z: center.z,
+    width: 2.4 + height * 0.4,
+    depth: 1.8 + height * 0.3,
+    angle: 0,
+    opacity: 0.14 * Math.max(0, 1 - height / 7),
+  };
+}
+
+/** Shell hash and coral rubble: denser near coral heads, where broken coral collects, and sparse elsewhere. */
+function buildRubble(rand: Rand, count: number) {
+  const geometry = lump(rand, 0.18);
+  geometry.computeVertexNormals();
+  const material = new MeshStandardMaterial({ roughness: 0.85, flatShading: true });
+  const mesh = new InstancedMesh(geometry, material, count);
+  const tones = ["#f3eee3", "#e8dcc6", "#d9cdb8", "#cbb79a", "#efe6d6"].map((h) => new Color(h));
+  const m = new Matrix4();
+  const q = new Quaternion();
+  const e = new Euler();
+  for (let i = 0; i < count; i++) {
+    let x: number;
+    let z: number;
+    if (i % 3 !== 0) {
+      const b = BOMMIES[i % BOMMIES.length];
+      const a = rand() * Math.PI * 2;
+      const r = b.radius * (1.05 + rand() ** 2 * 2.2);
+      x = b.x + Math.cos(a) * r;
+      z = b.z + Math.sin(a) * r;
+    } else {
+      x = (rand() - 0.5) * 18;
+      z = -3 - rand() * 14;
+    }
+    const size = 0.025 + rand() ** 2 * 0.07;
+    q.setFromEuler(e.set(rand() * 0.6, rand() * Math.PI * 2, rand() * 0.6));
+    m.compose(
+      new Vector3(x, sandHeight(x, z) + size * 0.25, z),
+      q,
+      new Vector3(size * 1.3, size * 0.45, size),
+    );
+    mesh.setMatrixAt(i, m);
+    mesh.setColorAt(i, tones[Math.floor(rand() * tones.length)]);
+  }
+  return mesh;
 }
 
 /**
  * Open Caribbean sand flat with two coral heads and a few seaweed tufts, where southern stingrays forage.
  * Kept deliberately sparse: rays favor open sand and avoid dense reef.
  */
-export function Reef({ still, ray }: { still: boolean; ray: RayState }) {
+export function Reef({
+  still,
+  ray,
+  school,
+  lite,
+}: {
+  still: boolean;
+  ray: RayState;
+  school?: Vector3;
+  lite: boolean;
+}) {
   const tufts = useRef<Group>(null);
-  const { sand, sandMaterial, causticUniforms } = useMemo(() => {
-    const causticUniforms = { uTime: { value: 0 }, uCaustic: { value: 0.5 } };
-    const sandMaterial = new MeshStandardMaterial({ color: "#ece6d2", roughness: 1 });
-    sandMaterial.onBeforeCompile = (shader) => {
+  const causticUniforms = useMemo(() => ({ uTime: { value: 0 }, uCaustic: { value: 0.5 } }), []);
+  const sand = useMemo(buildSandGeometry, []);
+  const sandMaterial = useMemo(() => buildSandMaterial(causticUniforms), [causticUniforms]);
+  const rubble = useMemo(() => buildRubble(seeded(23), lite ? 70 : 170), [lite]);
+
+  const material = useMemo(() => {
+    const coral = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, side: DoubleSide });
+    // Caustics play across the up-facing tops of coral and rock, just as on the sand around them.
+    coral.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, causticUniforms);
       shader.vertexShader = shader.vertexShader
-        .replace("#include <common>", "#include <common>\nvarying vec3 vSeabed;")
+        .replace("#include <common>", "#include <common>\nvarying vec3 vReefWorld;")
         .replace(
           "#include <begin_vertex>",
-          "#include <begin_vertex>\nvSeabed = (modelMatrix * vec4(transformed, 1.0)).xyz;",
+          "#include <begin_vertex>\nvReefWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;",
         );
       shader.fragmentShader = shader.fragmentShader
         .replace(
           "#include <common>",
-          `#include <common>\nvarying vec3 vSeabed;\nuniform float uTime;\nuniform float uCaustic;\n${CAUSTIC_GLSL}`,
+          `#include <common>\nvarying vec3 vReefWorld;\nuniform float uTime;\nuniform float uCaustic;\n${CAUSTIC_GLSL}`,
         )
         .replace(
-          "#include <color_fragment>",
-          "#include <color_fragment>\ndiffuseColor.rgb += vec3(0.85, 1.0, 0.97) * caustic(vSeabed.xz * 1.1, uTime) * uCaustic;",
+          "#include <normal_fragment_begin>",
+          `#include <normal_fragment_begin>
+          float up = max(0.0, (vec4(normal, 0.0) * viewMatrix).y);
+          diffuseColor.rgb += vec3(0.85, 1.0, 0.97) * caustic(vReefWorld.xz * 1.1, uTime) * uCaustic * up * 0.8;`,
         );
     };
-    return { sand: buildSand(), sandMaterial, causticUniforms };
-  }, []);
-
-  const material = useMemo(
-    () => new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, side: DoubleSide }),
-    [],
-  );
+    return coral;
+  }, [causticUniforms]);
   const bommies = useMemo(() => {
     const rand = seeded(11);
     return BOMMIES.map((b) => ({ ...b, geometry: buildBommie(rand, b.radius, b.height), fan: seaFan(rand) }));
@@ -324,7 +396,21 @@ export function Reef({ still, ray }: { still: boolean; ray: RayState }) {
 
   return (
     <group>
-      <mesh geometry={sand} material={sandMaterial} position={[0, FLOOR_Y - 0.12, -12]} />
+      <mesh geometry={sand} material={sandMaterial} position={SAND_POSITION} />
+      <primitive object={rubble} />
+      {BOMMIES.map((b) => (
+        <SoftShadow
+          key={`shadow ${b.x},${b.z}`}
+          pose={() => ({
+            x: b.x,
+            z: b.z,
+            width: b.radius * 3.2,
+            depth: b.radius * 3.2,
+            angle: 0,
+            opacity: 0.35,
+          })}
+        />
+      ))}
       {bommies.map((b) => (
         <group key={`${b.x},${b.z}`} position={[b.x, FLOOR_Y - 0.1, b.z]}>
           <mesh geometry={b.geometry} material={material} />
@@ -346,7 +432,8 @@ export function Reef({ still, ray }: { still: boolean; ray: RayState }) {
           />
         ))}
       </group>
-      <RayShadow ray={ray} />
+      <SoftShadow pose={() => rayShadow(ray)} />
+      {school && <SoftShadow pose={() => schoolShadow(school)} />}
     </group>
   );
 }

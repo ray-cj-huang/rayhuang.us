@@ -176,7 +176,7 @@ export function Contact() {
           </ul>
         </div>
       </Reveal>
-      <p className="mt-10 text-center font-mono text-xs text-muted">
+      <p className="card mx-auto mt-10 w-fit rounded-full px-3 py-1 text-center font-mono text-xs text-muted">
         © {new Date().getFullYear()} {site.name}
       </p>
     </footer>

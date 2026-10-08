@@ -10,6 +10,7 @@ import {
   InstancedBufferAttribute,
   type InstancedMesh,
   LatheGeometry,
+  MathUtils,
   Matrix4,
   MeshStandardMaterial,
   Vector2,
@@ -70,8 +71,12 @@ function buildFish(species: Species) {
   const colors = new Float32Array(position.count * 3);
   const bodyVertices = body.getAttribute("position").count;
   const fin = new Color(species.fin);
+  const eye = new Color("#0b0f14");
   for (let i = 0; i < position.count; i++) {
-    const color = i >= bodyVertices ? fin : species.shade(position.getY(i) / H, position.getZ(i) / half);
+    const back = position.getY(i) / H;
+    const along = position.getZ(i) / half;
+    const isEye = Math.hypot(back - 0.2, (along - 0.72) * 3.2) < 0.32;
+    const color = i >= bodyVertices ? fin : isEye ? eye : species.shade(back, along);
     colors.set([color.r, color.g, color.b], i * 3);
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
@@ -82,23 +87,28 @@ function buildFish(species: Species) {
 function buildMaterial(species: Species) {
   const material = new MeshStandardMaterial({
     vertexColors: true,
-    roughness: 0.4,
-    metalness: 0.25,
+    roughness: species.roughness,
+    metalness: species.metalness,
+    envMapIntensity: 1.6,
     side: DoubleSide,
   });
   const L = species.length;
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nattribute float aPhase;")
+      .replace("#include <common>", "#include <common>\nattribute float aPhase;\nattribute float aBend;")
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
         float tailward = smoothstep(${(L * 0.15).toFixed(4)}, ${(-L * 0.55).toFixed(4)}, position.z);
-        transformed.x += sin(aPhase - position.z * ${(5.4 / L).toFixed(2)}) * ${(L * 0.095).toFixed(4)} * tailward;`,
+        transformed.x += sin(aPhase - position.z * ${(5.4 / L).toFixed(2)}) * ${(L * 0.095).toFixed(4)} * tailward;
+        // Fish turn by curving the whole body, so bend it in proportion to the turn rate.
+        transformed.x += aBend * position.z * position.z * ${(1.6 / L).toFixed(2)};`,
       );
   };
   return material;
 }
+
+const MAX_BEND = 0.35;
 
 export type SchoolBehavior = (
   time: number,
@@ -108,6 +118,7 @@ export type SchoolBehavior = (
  * One species of procedural fish, flocking with boids.
  *
  * @param behavior - Called every frame to steer the school: where to head, and what to avoid.
+ * @param center - Receives the school's centroid every frame.
  * @param still - Freeze the school, for `prefers-reduced-motion`.
  */
 export function FishSchool({
@@ -115,11 +126,14 @@ export function FishSchool({
   count,
   behavior,
   still,
+  center,
 }: {
   species: Species;
   count: number;
   behavior: SchoolBehavior;
   still: boolean;
+  /** Receives the school's centroid every frame, e.g. to place its shadow. */
+  center?: Vector3;
 }) {
   const mesh = useRef<InstancedMesh>(null);
   const geometry = useMemo(() => buildFish(species), [species]);
@@ -131,9 +145,13 @@ export function FishSchool({
     const phase = new Float32Array(count).map(() => Math.random() * Math.PI * 2);
     const scale = new Float32Array(count).map(() => 0.85 + Math.random() * 0.3);
     const phaseAttribute = new InstancedBufferAttribute(phase, 1);
+    const bend = new Float32Array(count);
+    const bendAttribute = new InstancedBufferAttribute(bend, 1);
     geometry.setAttribute("aPhase", phaseAttribute);
+    geometry.setAttribute("aBend", bendAttribute);
+    const heading = new Float32Array(count).fill(Number.NaN);
     const params: FlockParams = { ...species.flock };
-    return { flock, phase, scale, phaseAttribute, params };
+    return { flock, phase, scale, phaseAttribute, bend, bendAttribute, heading, params };
   }, [count, species, geometry]);
 
   const temp = useMemo(
@@ -158,8 +176,22 @@ export function FishSchool({
       stepFlock(flock, params, dt);
     }
 
+    let cx = 0;
+    let cy = 0;
+    let cz = 0;
     for (let i = 0; i < flock.count; i++) {
       const ix = i * 3;
+      cx += flock.position[ix];
+      cy += flock.position[ix + 1];
+      cz += flock.position[ix + 2];
+      const yaw = Math.atan2(flock.velocity[ix], flock.velocity[ix + 2]);
+      const previous = school.heading[i];
+      if (!Number.isNaN(previous) && dt > 0) {
+        const turn = Math.atan2(Math.sin(yaw - previous), Math.cos(yaw - previous)) / dt;
+        const target = MathUtils.clamp(turn * 0.12, -MAX_BEND, MAX_BEND);
+        school.bend[i] = MathUtils.lerp(school.bend[i], target, 0.2);
+      }
+      school.heading[i] = yaw;
       const speed = Math.hypot(flock.velocity[ix], flock.velocity[ix + 1], flock.velocity[ix + 2]);
       // Faster fish beat their tails faster rather than wider.
       if (!still) phase[i] += dt * Math.PI * 2 * species.tailBeat * (0.6 + speed / species.flock.maxSpeed);
@@ -171,6 +203,8 @@ export function FishSchool({
     }
     m.instanceMatrix.needsUpdate = true;
     school.phaseAttribute.needsUpdate = true;
+    school.bendAttribute.needsUpdate = true;
+    center?.set(cx / flock.count, cy / flock.count, cz / flock.count);
   });
 
   return <instancedMesh ref={mesh} args={[geometry, material, count]} frustumCulled={false} />;

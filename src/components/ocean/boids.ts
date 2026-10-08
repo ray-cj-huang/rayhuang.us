@@ -9,6 +9,10 @@ export type Flock = {
   position: Float32Array;
   /** xyz per fish, packed, in units per second. */
   velocity: Float32Array;
+  /** Per-fish startle level, 1 right after a scare and decaying to 0; created on first step if missing. */
+  startle?: Float32Array;
+  /** Per-fish multiplier on cruising speed, so individuals don't move in lockstep. */
+  pace?: Float32Array;
 };
 
 export type FlockParams = {
@@ -29,10 +33,23 @@ export type FlockParams = {
   obstacles?: readonly Obstacle[];
   /** Closest two fish may ever be, enforced after every step. */
   minDistance?: number;
+  /** How many nearest neighbors each fish attends to; real fish track only a handful. */
+  neighbors?: number;
+  /** Half-angle of the blind zone behind each fish, in radians; neighbors there are ignored for alignment and cohesion. */
+  blindAngle?: number;
+  /** Fastest a fish can change heading, in radians per second. */
+  maxTurnRate?: number;
+  /** Fastest a fish can change speed, in units per second squared. */
+  maxAccel?: number;
+  /** Largest vertical component of a fish's heading, 0..1; fish swim mostly level. */
+  maxPitch?: number;
 };
 
 const AVOID_MARGIN = 0.6;
 const AVOID_WEIGHT = 6;
+/** Fraction of the threat radius inside which a fish startles into a burst. */
+const STARTLE_AT = 0.6;
+const STARTLE_DECAY = 1.5;
 
 /** Distance from an ellipsoid's center in units of its radii: under 1 means inside. */
 function ellipsoidDistance(o: Obstacle, x: number, y: number, z: number) {
@@ -46,6 +63,7 @@ function ellipsoidDistance(o: Obstacle, x: number, y: number, z: number) {
 export function createFlock(count: number, bounds: FlockParams["bounds"], random = Math.random): Flock {
   const position = new Float32Array(count * 3);
   const velocity = new Float32Array(count * 3);
+  const pace = new Float32Array(count);
   for (let i = 0; i < count; i++) {
     for (let a = 0; a < 3; a++) {
       position[i * 3 + a] = bounds.min[a] + random() * (bounds.max[a] - bounds.min[a]);
@@ -53,21 +71,34 @@ export function createFlock(count: number, bounds: FlockParams["bounds"], random
     velocity[i * 3] = random() - 0.5;
     velocity[i * 3 + 1] = (random() - 0.5) * 0.3;
     velocity[i * 3 + 2] = (random() - 0.5) * 0.5;
+    pace[i] = 0.85 + random() * 0.3;
   }
-  return { count, position, velocity };
+  return { count, position, velocity, pace, startle: new Float32Array(count) };
 }
 
-/** Advances the flock by `dt` seconds in place, using classic boids rules plus bounds, goal and threat. */
+/**
+ * Advances the flock by `dt` seconds in place.
+ *
+ * Social rules follow Couzin's zonal model: a neighbor inside the separation radius triggers repulsion only;
+ * otherwise each fish aligns with and moves toward its nearest visible neighbors.
+ * Bounds, goal, obstacles and the threat then steer on top, and heading changes are rate-limited.
+ */
 export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
   const { count, position: pos, velocity: vel } = flock;
+  flock.startle ??= new Float32Array(count);
+  flock.pace ??= new Float32Array(count).fill(1);
+  const { startle, pace } = flock;
   const accel = new Float32Array(count * 3);
+  const k = p.neighbors ?? Number.POSITIVE_INFINITY;
+  const blindCos = Math.cos(Math.PI - (p.blindAngle ?? 0));
+  const nearby: { j: number; dist: number }[] = [];
 
   for (let i = 0; i < count; i++) {
     const ix = i * 3;
-    let neighbors = 0;
-    const align = [0, 0, 0];
-    const center = [0, 0, 0];
+    const speedI = Math.hypot(vel[ix], vel[ix + 1], vel[ix + 2]) || 1;
     const away = [0, 0, 0];
+    let crowded = false;
+    nearby.length = 0;
 
     for (let j = 0; j < count; j++) {
       if (j === i) continue;
@@ -77,25 +108,41 @@ export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
       const dz = pos[ix + 2] - pos[jx + 2];
       const dist = Math.hypot(dx, dy, dz);
       if (dist > p.neighborRadius) continue;
-      neighbors++;
-      for (let a = 0; a < 3; a++) {
-        align[a] += vel[jx + a];
-        center[a] += pos[jx + a];
-      }
       if (dist < p.separationRadius) {
+        crowded = true;
         // Inverse-distance push, guarded so coincident fish still separate.
         const push = (p.separationRadius - dist) / Math.max(dist, 1e-3);
         away[0] += dx * push;
         away[1] += dy * push;
         away[2] += dz * push;
+        continue;
+      }
+      // Fish can't see directly behind themselves, so they don't react to neighbors there.
+      const ahead = -(dx * vel[ix] + dy * vel[ix + 1] + dz * vel[ix + 2]) / (dist * speedI);
+      if (ahead < blindCos) continue;
+      nearby.push({ j, dist });
+    }
+
+    const align = [0, 0, 0];
+    const center = [0, 0, 0];
+    let used = 0;
+    if (!crowded && nearby.length > 0) {
+      if (nearby.length > k) nearby.sort((a, b) => a.dist - b.dist);
+      used = Math.min(k, nearby.length);
+      for (let n = 0; n < used; n++) {
+        const jx = nearby[n].j * 3;
+        for (let a = 0; a < 3; a++) {
+          align[a] += vel[jx + a];
+          center[a] += pos[jx + a];
+        }
       }
     }
 
     for (let a = 0; a < 3; a++) {
       let acc = away[a] * p.separation;
-      if (neighbors > 0) {
-        acc += (align[a] / neighbors - vel[ix + a]) * p.alignment;
-        acc += (center[a] / neighbors - pos[ix + a]) * p.cohesion;
+      if (used > 0) {
+        acc += (align[a] / used - vel[ix + a]) * p.alignment;
+        acc += (center[a] / used - pos[ix + a]) * p.cohesion;
       }
       const lo = p.bounds.min[a] + p.boundsMargin;
       const hi = p.bounds.max[a] - p.boundsMargin;
@@ -119,6 +166,7 @@ export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
       accel[ix + 2] += (nz / n) * push;
     }
 
+    startle[i] *= Math.exp(-dt * STARTLE_DECAY);
     if (p.threat) {
       const t = p.threat;
       const dx = pos[ix] - t.position[0];
@@ -130,20 +178,14 @@ export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
         accel[ix] += (dx / dist) * flee;
         accel[ix + 1] += (dy / dist) * flee;
         accel[ix + 2] += (dz / dist) * flee;
+        if (dist < t.radius * STARTLE_AT) startle[i] = 1;
       }
     }
   }
 
   for (let i = 0; i < count; i++) {
     const ix = i * 3;
-    for (let a = 0; a < 3; a++) vel[ix + a] += accel[ix + a] * dt;
-
-    const speed = Math.hypot(vel[ix], vel[ix + 1], vel[ix + 2]);
-    const clamped = Math.min(p.maxSpeed, Math.max(p.minSpeed, speed));
-    const scale = speed > 1e-6 ? clamped / speed : 0;
-    if (scale === 0) vel[ix] = p.minSpeed;
-    else for (let a = 0; a < 3; a++) vel[ix + a] *= scale;
-
+    integrate(vel, ix, accel, dt, p, startle[i], pace[i]);
     for (let a = 0; a < 3; a++) {
       pos[ix + a] += vel[ix + a] * dt;
       // Hard walls as a backstop for the soft steering above, so no fish can escape the view.
@@ -162,6 +204,58 @@ export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
     if (p.minDistance) separateOverlaps(flock, p.minDistance);
     for (const o of p.obstacles ?? []) pushOutOf(flock, o);
   }
+}
+
+/** Applies steering to one fish's velocity, within its turn-rate, acceleration, pitch and speed limits. */
+function integrate(
+  vel: Float32Array,
+  ix: number,
+  accel: Float32Array,
+  dt: number,
+  p: FlockParams,
+  startle: number,
+  pace: number,
+) {
+  const speed = Math.hypot(vel[ix], vel[ix + 1], vel[ix + 2]);
+  const want = [vel[ix] + accel[ix] * dt, vel[ix + 1] + accel[ix + 1] * dt, vel[ix + 2] + accel[ix + 2] * dt];
+  const wantSpeed = Math.hypot(want[0], want[1], want[2]);
+  // A startled fish bursts to roughly double speed and turns hard: the "flash expansion" escape.
+  const topSpeed = p.maxSpeed * (1 + startle);
+  const target = Math.min(topSpeed, Math.max(p.minSpeed, wantSpeed * (startle > 0.05 ? 1 : pace)));
+
+  let dir = speed > 1e-6 ? [vel[ix] / speed, vel[ix + 1] / speed, vel[ix + 2] / speed] : [1, 0, 0];
+  let goal = wantSpeed > 1e-6 ? [want[0] / wantSpeed, want[1] / wantSpeed, want[2] / wantSpeed] : dir;
+  // Limit the pitch of the heading being turned toward, so fish level out gradually instead of snapping flat.
+  const maxPitch = p.maxPitch ?? 1;
+  if (Math.abs(goal[1]) > maxPitch) {
+    const level = Math.hypot(goal[0], goal[2]);
+    const flat = Math.sqrt(1 - maxPitch ** 2);
+    goal =
+      level > 1e-6
+        ? [(goal[0] / level) * flat, Math.sign(goal[1]) * maxPitch, (goal[2] / level) * flat]
+        : dir;
+  }
+  const maxTurn = (p.maxTurnRate ?? Number.POSITIVE_INFINITY) * (1 + startle * 2) * dt;
+  const cos = Math.min(1, Math.max(-1, dir[0] * goal[0] + dir[1] * goal[1] + dir[2] * goal[2]));
+  const angle = Math.acos(cos);
+  if (angle <= maxTurn) dir = goal;
+  else {
+    // Rotate toward the goal heading by at most maxTurn, within the plane the two directions span.
+    let perp = [goal[0] - dir[0] * cos, goal[1] - dir[1] * cos, goal[2] - dir[2] * cos];
+    let len = Math.hypot(perp[0], perp[1], perp[2]);
+    if (len < 1e-6) {
+      perp = [-dir[2], 0, dir[0]];
+      len = Math.hypot(perp[0], perp[1], perp[2]) || 1;
+    }
+    const c = Math.cos(maxTurn);
+    const s = Math.sin(maxTurn);
+    dir = [0, 1, 2].map((a) => dir[a] * c + (perp[a] / len) * s);
+  }
+
+  const maxDelta = (p.maxAccel ?? Number.POSITIVE_INFINITY) * (1 + startle * 3) * dt;
+  const next = speed + Math.min(maxDelta, Math.max(-maxDelta, target - speed));
+  const finalSpeed = Math.min(topSpeed, Math.max(p.minSpeed, next));
+  for (let a = 0; a < 3; a++) vel[ix + a] = dir[a] * finalSpeed;
 }
 
 function separateOverlaps({ count, position: pos }: Flock, minDistance: number) {

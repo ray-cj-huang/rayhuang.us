@@ -63,7 +63,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   /* Light text deeper down can sit over pale sand or coral, so a soft halo keeps it legible. */
-  text-shadow: 0 1px 10px rgb(4 24 44 / calc(var(--depth) * 0.85));
+  text-shadow:
+    0 1px 3px rgb(4 24 44 / calc(var(--depth) * 0.7)),
+    0 1px 14px rgb(4 24 44 / calc(var(--depth) * 0.9));
 }
 
 @layer components {

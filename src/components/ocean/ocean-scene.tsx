@@ -3,7 +3,16 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
-import { type AmbientLight, Color, type DirectionalLight, FogExp2, SRGBColorSpace, Vector3 } from "three";
+import {
+  type AmbientLight,
+  Color,
+  type DirectionalLight,
+  FogExp2,
+  PMREMGenerator,
+  SRGBColorSpace,
+  Vector3,
+} from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { Obstacle } from "./boids";
 import { FishSchool, type SchoolBehavior } from "./fish-school";
 import { BOMMIES, FLOOR_Y, REEF_OBSTACLES } from "./layout";
@@ -16,7 +25,7 @@ import { BAITFISH, FRENCH_GRUNT } from "./species";
 import { Stingray } from "./stingray";
 
 function Water({ dark, still }: { dark: boolean; still: boolean }) {
-  const { scene, invalidate } = useThree();
+  const { scene, invalidate, gl } = useThree();
   const sun = useRef<DirectionalLight>(null);
   const ambient = useRef<AmbientLight>(null);
   const water = useMemo(() => {
@@ -24,6 +33,18 @@ function Water({ dark, still }: { dark: boolean; still: boolean }) {
     const fog = new FogExp2(background.getHex(), 0.03);
     return { background, fog };
   }, []);
+
+  useEffect(() => {
+    // A soft procedural environment, so silver fish and wet surfaces pick up believable reflections.
+    const pmrem = new PMREMGenerator(gl);
+    const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = environment;
+    scene.environmentIntensity = 0.35;
+    return () => {
+      environment.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
 
   useEffect(() => {
     scene.background = water.background;
@@ -40,7 +61,8 @@ function Water({ dark, still }: { dark: boolean; still: boolean }) {
     const [r, g, b] = waterColorAt(depth, dark ? DARK_WATER : LIGHT_WATER);
     water.background.setRGB(r, g, b, SRGBColorSpace);
     water.fog.color.copy(water.background);
-    water.fog.density = 0.05 + depth * 0.05;
+    // Deeper water is murkier, so distant and even nearby sand settles into blue.
+    water.fog.density = 0.05 + depth * 0.09;
     if (sun.current) sun.current.intensity = 2.6 * (1 - 0.7 * depth);
     if (ambient.current) ambient.current.intensity = 0.9 - 0.4 * depth;
   });
@@ -83,11 +105,11 @@ function useBehaviors(ray: RayState) {
     // Baitfish mill in a slowly drifting ball, and part around the ray as it passes.
     const baitfish: SchoolBehavior = (t) => ({
       goal: [
-        -1.2 + Math.sin(t * 0.05) * 2.5 + Math.cos(t * 0.55) * 1.3,
+        -2.6 + Math.sin(t * 0.05) * 2 + Math.cos(t * 0.55) * 1.3,
         FLOOR_Y + 2.6 + Math.sin(t * 0.3) * 0.25,
-        -6.5 + Math.sin(t * 0.55) * 1.3,
+        -7.5 + Math.sin(t * 0.55) * 1.3,
       ],
-      goalWeight: 0.9,
+      goalWeight: 1.3,
       threat: flee(),
       obstacles: obstacles(),
       minDistance: 0.12,
@@ -139,6 +161,7 @@ export default function OceanScene() {
     [],
   );
   const behaviors = useBehaviors(ray);
+  const baitCenter = useMemo(() => new Vector3(), []);
   const n = (s: { count: { desktop: number; mobile: number } }) =>
     narrow ? s.count.mobile : s.count.desktop;
 
@@ -154,9 +177,15 @@ export default function OceanScene() {
       <CameraRig />
       <GodRays still={still} />
       {!narrow && <Caustics still={still} />}
-      <Reef still={still} ray={ray} />
+      <Reef still={still} ray={ray} school={baitCenter} lite={narrow} />
       <MarineSnow count={narrow ? 150 : 400} still={still} />
-      <FishSchool species={BAITFISH} count={n(BAITFISH)} behavior={behaviors.baitfish} still={still} />
+      <FishSchool
+        species={BAITFISH}
+        count={n(BAITFISH)}
+        behavior={behaviors.baitfish}
+        still={still}
+        center={baitCenter}
+      />
       <FishSchool species={FRENCH_GRUNT} count={n(FRENCH_GRUNT)} behavior={behaviors.grunts} still={still} />
       <RayPlacement still={still} ray={ray} />
     </Canvas>
