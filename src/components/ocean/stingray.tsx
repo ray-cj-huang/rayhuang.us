@@ -9,6 +9,9 @@ import {
   CylinderGeometry,
   type Group,
   MathUtils,
+  Plane,
+  Raycaster,
+  Vector2,
   Vector3,
 } from "three";
 
@@ -102,44 +105,87 @@ function buildTail() {
   return { geometry, base };
 }
 
-function useFollowCursor(still: boolean) {
+const NEAR_Z = 0.5;
+const FAR_Z = -4;
+
+// Two incommensurate periods (17 s and 29 s) so the near/far drift never visibly repeats.
+function cruisingDepth(t: number) {
+  const mid = (NEAR_Z + FAR_Z) / 2;
+  const range = (NEAR_Z - FAR_Z) / 2;
+  return (
+    mid + range * (0.6 * Math.sin((2 * Math.PI * t) / 17) + 0.4 * Math.sin((2 * Math.PI * t) / 29 + 1.3))
+  );
+}
+
+function useSwimPath(still: boolean, worldPosition?: Vector3) {
   const follow = useRef<Group>(null);
-  const { viewport, gl } = useThree();
-  const state = useMemo(() => ({ cursor: new Vector3(), target: new Vector3(), active: false }), []);
+  const { camera } = useThree();
+  const state = useMemo(
+    () => ({
+      active: false,
+      ndc: new Vector2(),
+      raycaster: new Raycaster(),
+      plane: new Plane(new Vector3(0, 0, 1), 0),
+      hit: new Vector3(),
+      world: new Vector3(),
+      target: new Vector3(),
+      last: new Vector3(),
+      speed: 0,
+    }),
+    [],
+  );
 
   // Listen on window because the canvas ignores pointer events, so it never blocks clicks or scrolling.
   useEffect(() => {
     if (still) return;
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== "mouse") return;
-      const rect = gl.domElement.getBoundingClientRect();
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      // The camera looks straight down -z, so NDC maps linearly onto the z = 0 plane.
-      state.cursor.set(
-        MathUtils.clamp(nx, -1, 1) * (viewport.width / 2),
-        MathUtils.clamp(ny, -1, 1) * (viewport.height / 2),
-        0,
+      state.ndc.set(
+        MathUtils.clamp((e.clientX / window.innerWidth) * 2 - 1, -1, 1),
+        MathUtils.clamp(-((e.clientY / window.innerHeight) * 2 - 1), -1, 1),
       );
       state.active = true;
     };
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => window.removeEventListener("pointermove", onMove);
-  }, [gl, viewport, still, state]);
+  }, [still, state]);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     const g = follow.current;
-    if (!g?.parent || !state.active) return;
-    state.target.copy(state.cursor);
-    g.parent.worldToLocal(state.target);
+    if (!g?.parent) return;
+    const dt = Math.min(delta, 1 / 20);
+    state.target.set(0, 0, still ? 0 : cruisingDepth(clock.elapsedTime));
+
+    if (state.active) {
+      // Cast the cursor onto the plane at the ray's current depth, so it stays under the cursor near or far.
+      g.getWorldPosition(state.world);
+      state.plane.constant = -state.world.z;
+      state.raycaster.setFromCamera(state.ndc, camera);
+      if (state.raycaster.ray.intersectPlane(state.plane, state.hit)) {
+        g.parent.worldToLocal(state.hit);
+        state.target.x = state.hit.x;
+        state.target.y = state.hit.y;
+      }
+    }
+
+    state.last.copy(g.position);
     // Exponential easing on delta keeps the drift speed independent of frame rate.
-    const ease = 1 - Math.exp(-delta * 0.9);
-    const dx = state.target.x - g.position.x;
+    const ease = 1 - Math.exp(-dt * 0.9);
     g.position.lerp(state.target, ease);
-    g.rotation.z = MathUtils.lerp(g.rotation.z, MathUtils.clamp(-dx * 0.25, -0.45, 0.45), ease * 2);
+    const vx = (g.position.x - state.last.x) / dt;
+    const vy = (g.position.y - state.last.y) / dt;
+    state.speed = MathUtils.lerp(state.speed, Math.hypot(vx, vy, (g.position.z - state.last.z) / dt), 0.1);
+
+    // Turn toward the direction of travel and roll into the turn.
+    const turn = ease * 2;
+    g.rotation.y = MathUtils.lerp(g.rotation.y, MathUtils.clamp(vx * 0.6, -0.7, 0.7), turn);
+    g.rotation.x = MathUtils.lerp(g.rotation.x, MathUtils.clamp(-vy * 0.4, -0.4, 0.4), turn);
+    g.rotation.z = MathUtils.lerp(g.rotation.z, MathUtils.clamp(-vx * 0.35, -0.45, 0.45), turn);
+
+    if (worldPosition) g.getWorldPosition(worldPosition);
   });
 
-  return follow;
+  return { follow, motion: state };
 }
 
 /**
@@ -148,16 +194,23 @@ function useFollowCursor(still: boolean) {
  *
  * Model space: x spans the wings, y is up, and the nose points to +z.
  *
+ * It drifts nearer and farther on its own, so its apparent size changes as it swims.
+ *
  * @param still - Freeze the animation, for `prefers-reduced-motion`.
+ * @param worldPosition - Receives the ray's world position every frame, e.g. for fish to avoid.
  */
-export function Stingray({ still = false }: { still?: boolean }) {
+export function Stingray({ still = false, worldPosition }: { still?: boolean; worldPosition?: Vector3 }) {
   const swim = useRef<Group>(null);
+  const finPhase = useRef(0);
   const body = useMemo(buildBody, []);
   const tail = useMemo(buildTail, []);
-  const follow = useFollowCursor(still);
+  const { follow, motion } = useSwimPath(still, worldPosition);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     const t = still ? 0.6 : clock.elapsedTime;
+    // Rays swim faster by beating their fins more often, not harder (Blevins & Lauder 2012).
+    if (!still) finPhase.current += Math.min(delta, 1 / 20) * 2.1 * (1 + Math.min(motion.speed / 1.5, 1));
+    const phase = still ? 1.3 : finPhase.current;
 
     const pos = body.geometry.getAttribute("position") as BufferAttribute;
     const arr = pos.array as Float32Array;
@@ -166,7 +219,8 @@ export function Stingray({ still = false }: { still?: boolean }) {
       // Rows at the snout and rear are narrow, and flapping their edges fully pinches the tips.
       const reach = Math.abs(body.base[k * 3]) / HALF_SPAN;
       const v = body.uv[k * 2 + 1];
-      const flap = 0.38 * reach ** 2 * Math.sin(t * 2.1 - v * 3.2);
+      // Amplitude ramps up to about mid-disc, then plateaus, as measured in freshwater stingrays.
+      const flap = 0.26 * MathUtils.smoothstep(reach, 0, 0.55) * Math.sin(phase - v * 3.2);
       arr[k * 3 + 1] = body.base[k * 3 + 1] + flap;
     }
     pos.needsUpdate = true;
@@ -176,8 +230,8 @@ export function Stingray({ still = false }: { still?: boolean }) {
     const tarr = tpos.array as Float32Array;
     for (let k = 0; k < tarr.length / 3; k++) {
       const towardTip = Math.max(0, -tail.base[k * 3 + 2] - LENGTH / 2) / TAIL_LENGTH;
-      tarr[k * 3] = tail.base[k * 3] + Math.sin(t * 2.1 - towardTip * 4) * 0.22 * towardTip ** 2;
-      tarr[k * 3 + 1] = tail.base[k * 3 + 1] + Math.sin(t * 2.1 - 3.2 - towardTip * 3) * 0.08 * towardTip;
+      tarr[k * 3] = tail.base[k * 3] + Math.sin(phase - towardTip * 4) * 0.22 * towardTip ** 2;
+      tarr[k * 3 + 1] = tail.base[k * 3 + 1] + Math.sin(phase - 3.2 - towardTip * 3) * 0.08 * towardTip;
     }
     tpos.needsUpdate = true;
 

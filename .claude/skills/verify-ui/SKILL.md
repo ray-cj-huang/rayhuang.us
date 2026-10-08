@@ -23,10 +23,16 @@ description: Preview the production build and visually check a UI or 3D change, 
 6. Check `read_console_messages` for errors.
    A `THREE.Clock` deprecation warning comes from React Three Fiber 9 itself and is expected.
 
-## Stingray specifics
+## Ocean scene specifics
 
-- It follows the mouse only; touch and pen input are ignored by design.
-- It sits on a fixed, full-page canvas with `pointer-events: none`.
+- Check three depths: the top, the middle (`scrollTo` half of `scrollHeight - innerHeight`) and the bottom.
+  The water goes from aqua to navy, god rays and caustics fade, and text outside cards turns light.
+  `getComputedStyle(document.documentElement).getPropertyValue("--depth")` shows the current depth.
+- The stingray follows the mouse only; touch and pen input are ignored by design.
+  To test it, hover a corner, wait about 5 s with the pane visible, and take two screenshots.
+  It also drifts near and far over about 20 s, so its size changes on its own.
+- The canvas is fixed, full-page and `pointer-events: none`.
   It should never block clicks, text selection or scrolling.
+- Measure frame rate with a 3 s `requestAnimationFrame` counter while `document.visibilityState` is `visible`.
 - Shape problems usually come from mesh sampling, not the outline formula.
-  See the comments in `src/components/stingray.tsx`.
+  See the comments in `src/components/ocean/stingray.tsx`.

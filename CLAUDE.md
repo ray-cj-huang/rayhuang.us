@@ -33,9 +33,10 @@ Project skills live in `.claude/skills/`. Use them:
   Color tokens such as `--background`, `--muted` and `--accent` are defined once there, with a dark-mode override.
 - **Motion** (`motion/react`) for UI animation.
   Wrap scroll-in content in `<Reveal>` from `src/components/reveal.tsx` instead of hand-rolling `motion.div`s.
-- **three.js via React Three Fiber and drei.**
-  A procedural stingray (`src/components/stingray.tsx`) swims on a fixed, full-page canvas.
-  It slowly follows the mouse on desktop, ignores touch, and is not draggable.
+- **three.js via React Three Fiber and drei** for a fixed, full-page ocean (`src/components/ocean/`).
+  The water deepens from sunlit aqua to navy as you scroll, with god rays, caustics and marine snow.
+  A procedural stingray drifts near and far and slowly follows the mouse on desktop; it ignores touch and is not draggable.
+  A boids-driven fish school flocks and swerves away from the ray.
 - **Biome** for lint and format (no ESLint or Prettier). **bun test** for unit tests.
 
 ## Layout
@@ -43,7 +44,9 @@ Project skills live in `.claude/skills/`. Use them:
 ```
 src/
   app/            routes, layout, metadata, sitemap/robots, globals.css
-  components/     sections.tsx (server); reveal, scene-backdrop, hero-scene, stingray (client)
+  components/     sections.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
+  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school, light-rays, marine-snow;
+                  pure, unit-tested logic in boids.ts and palette.ts
   content/site.ts all copy, links and roles; edit here, not in components
 public/           static assets; CNAME must stay `rayhuang.us`
 .claude/skills/   project skills (see above)
@@ -56,6 +59,10 @@ public/           static assets; CNAME must stay `rayhuang.us`
 - three.js must never render on the server.
   Load 3D scenes through `next/dynamic` with `ssr: false` from a client wrapper, as `scene-backdrop.tsx` does.
 - Keep the scene cheap: capped `dpr`, low-power GL, no postprocessing. It's decoration.
+  Phones get fewer fish and particles and no caustics.
+- Keep simulation and color math in pure modules (`boids.ts`, `palette.ts`) with `bun test` coverage.
+- Text outside cards uses depth-aware tokens (`--depth` set on scroll by `SceneBackdrop`), so it lightens as the water darkens.
+  Cards pin their own text colors and stay readable at any depth.
 - Respect `prefers-reduced-motion` with Motion's `useReducedMotion()`.
   The stingray goes still and `<Reveal>` skips its entrance animation.
 - New images go in `public/images/` and are referenced as `/images/...`.

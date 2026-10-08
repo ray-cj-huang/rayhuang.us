@@ -1,22 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --muted: #475569;
-  --accent: #3b5bdb;
-  --card: rgb(255 255 255 / 0.7);
+  /* 0 at the top of the page to 1 at the bottom; set by SceneBackdrop on scroll. */
+  --depth: 0;
+  --surface: #d9f2fb;
+  --ink-top: #0f172a;
+  --ink-deep: #e6f1fb;
+  --muted-top: #3f5466;
+  --muted-deep: #a9c4dc;
+  --accent-top: #2f4fc4;
+  --accent-deep: #a8c8ff;
+
+  /* Text outside cards tracks the water: dark near the sunlit surface, light in the deep. */
+  --mix: calc(var(--depth) * 100%);
+  --background: var(--surface);
+  --foreground: color-mix(in oklab, var(--ink-top), var(--ink-deep) var(--mix));
+  --muted: color-mix(in oklab, var(--muted-top), var(--muted-deep) var(--mix));
+  --accent: color-mix(in oklab, var(--accent-top), var(--accent-deep) var(--mix));
+
+  --card: rgb(255 255 255 / 0.72);
+  --card-ink: #0f172a;
+  --card-muted: #475569;
+  --card-accent: #3b5bdb;
   --border: rgb(15 23 42 / 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #070a13;
-    --foreground: #e2e8f0;
-    --muted: #94a3b8;
-    --accent: #8ea8ff;
-    --card: rgb(15 23 42 / 0.55);
-    --border: rgb(148 163 184 / 0.14);
+    --surface: #1d4f6e;
+    --ink-top: #e6f1fb;
+    --muted-top: #b4cadd;
+    --accent-top: #a8c8ff;
+    --card: rgb(8 20 38 / 0.6);
+    --card-ink: #e2e8f0;
+    --card-muted: #94a3b8;
+    --card-accent: #8ea8ff;
+    --border: rgb(148 163 184 / 0.16);
   }
 }
 
@@ -46,10 +65,15 @@ body {
 }
 
 @layer components {
+  /* Cards stay readable at any depth, so they pin their own text colors. */
   .card {
     @apply rounded-2xl border p-6 backdrop-blur;
     background: var(--card);
     border-color: var(--border);
+    color: var(--card-ink);
+    --foreground: var(--card-ink);
+    --muted: var(--card-muted);
+    --accent: var(--card-accent);
   }
 
   .chip {
