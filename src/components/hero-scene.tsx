@@ -8,8 +8,7 @@ import { Stingray } from "./stingray";
 function Placement({ still }: { still: boolean }) {
   const { viewport } = useThree();
 
-  // Wide screens: swim to the right of the headline. Narrow (phones): swim in the open space
-  // above the text, which is bottom-aligned on mobile, sized to fit the screen width.
+  // On phones the hero text is bottom-aligned, so the ray uses the open space above it.
   const wide = viewport.aspect > 1.1;
   const x = wide ? viewport.width * 0.2 : 0;
   const y = wide ? 0.1 : viewport.height * 0.24;

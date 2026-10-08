@@ -1,18 +1,18 @@
-// Single source of truth for everything rendered on the site.
-// Edit this file to update copy; components should never hardcode content.
-
 export type Link = { label: string; href: string };
 
 export type Role = {
   title: string;
   org: string;
   orgUrl?: string;
-  logo?: string; // path under /public; falls back to a monogram
+  /** Path under `public/`. Without one, a monogram in `accent` is shown. */
+  logo?: string;
   start: string;
-  end?: string; // omit for current roles
+  /** Omit for a current role; it renders as "Present". */
+  end?: string;
   location: string;
   summary: string;
-  accent: string; // brand color for the org name / monogram
+  /** CSS color for the org name and monogram. */
+  accent: string;
 };
 
 export const site = {
@@ -23,7 +23,8 @@ export const site = {
   description: "Ray Huang — software engineer at Toma building AI coworkers for automotive dealerships.",
   email: "rayhuang.cj@gmail.com",
   avatar: "/images/ray.jpg",
-  contactUrl: "https://www.linkedin.com/in/ray-cj-huang/", // "Get in touch" target
+  /** Where the "Get in touch" button links. */
+  contactUrl: "https://www.linkedin.com/in/ray-cj-huang/",
 } as const;
 
 export const socials: Link[] = [

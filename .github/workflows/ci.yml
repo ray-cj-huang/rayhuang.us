@@ -10,51 +10,69 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Actions are pinned to commit SHAs so a moved tag can't change what runs; Dependabot bumps them.
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
-
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            ~/.bun/install/cache
-            .next/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}-
-            ${{ runner.os }}-bun-
-
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run test
-      - run: bun run build
 
-      - uses: actions/upload-pages-artifact@v5
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.bun/install/cache
+            .next/cache
+          key: build-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
+          restore-keys: build-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         if: github.ref == 'refs/heads/main'
         with:
           path: out
 
   deploy:
     if: github.ref == 'refs/heads/main'
-    needs: build
+    needs: [check, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write
+    # Never cancel a Pages deploy midway; queue the next one instead.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

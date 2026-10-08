@@ -3,7 +3,12 @@
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
-/** Fades and lifts its children in when they scroll into view. */
+/**
+ * Fades children in once, the first time they scroll into view.
+ * Renders statically under `prefers-reduced-motion`.
+ *
+ * @param delay - Seconds to wait before animating, for staggering siblings.
+ */
 export function Reveal({
   children,
   delay = 0,

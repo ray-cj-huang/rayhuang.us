@@ -12,31 +12,26 @@ import {
   Vector3,
 } from "three";
 
-// Procedural stingray: a rounded disc whose pectoral fins ripple with a wave
-// travelling nose → tail, plus a whip tail that sways. On desktop it
-// slowly follows the mouse cursor. Local axes:
-// x = span (left/right), y = up, z = forward (nose at +z).
-
-const SEG_U = 64; // across the span
-const SEG_V = 56; // nose to rear
-const SPAN = 1.85; // half-width at the widest point
+const SPAN_SEGMENTS = 64;
+const LENGTH_SEGMENTS = 56;
+const HALF_SPAN = 1.85;
 const LENGTH = 1.85;
 const DOME = 0.15;
 const TAIL_LENGTH = 2.4;
-const WIDEST = 0.45; // where along the body (0 = nose, 1 = rear) the disc is widest
-const ROUNDNESS = 2.1; // superellipse exponent: 1 = diamond, 2 = ellipse
+const WIDEST_AT = 0.45;
+// Superellipse exponent for the outline: 1 is a diamond, 2 an ellipse.
+const ROUNDNESS = 2.1;
 
 const TOP = new Color("#3b5bdb");
 const EDGE = new Color("#a5b6ff");
 const BELLY = new Color("#eef1ff");
 
-/** Half-width of the disc at v ∈ [0, 1]: a superellipse skewed so the snout is a little blunter. */
 function halfWidth(v: number) {
-  const t = v < WIDEST ? (WIDEST - v) / WIDEST : (v - WIDEST) / (1 - WIDEST);
-  return SPAN * Math.max(0, 1 - t ** ROUNDNESS) ** (1 / ROUNDNESS);
+  const t = v < WIDEST_AT ? (WIDEST_AT - v) / WIDEST_AT : (v - WIDEST_AT) / (1 - WIDEST_AT);
+  return HALF_SPAN * Math.max(0, 1 - t ** ROUNDNESS) ** (1 / ROUNDNESS);
 }
 
-/** Body thickness at (u, v): a central dome that flattens into a thin but rounded rim. */
+// The sqrt term keeps the rim rounded instead of tapering to a knife edge.
 function thickness(u: number, v: number) {
   const along = Math.max(Math.sin(Math.PI * v), 0) ** 0.5;
   const across = 1 - u * u;
@@ -44,23 +39,23 @@ function thickness(u: number, v: number) {
 }
 
 function buildBody() {
-  const cols = SEG_U + 1;
-  const rows = SEG_V + 1;
+  const cols = SPAN_SEGMENTS + 1;
+  const rows = LENGTH_SEGMENTS + 1;
   const perSurface = cols * rows;
   const base = new Float32Array(perSurface * 2 * 3);
   const colors = new Float32Array(perSurface * 2 * 3);
-  const uv = new Float32Array(perSurface * 2 * 2); // (u, v) kept for animation
+  const uv = new Float32Array(perSurface * 2 * 2);
   const c = new Color();
 
   for (let s = 0; s < 2; s++) {
     const top = s === 0;
     for (let j = 0; j < rows; j++) {
-      // Cosine spacing packs rows near the snout and rear, where the outline curves fastest;
-      // evenly spaced rows leave a flat, pointy facet at the tip.
-      const v = (1 - Math.cos((Math.PI * j) / SEG_V)) / 2;
+      // Cosine spacing packs rows near the snout and rear, where the outline curves fastest.
+      // Even spacing leaves a flat, pointy facet at the tip.
+      const v = (1 - Math.cos((Math.PI * j) / LENGTH_SEGMENTS)) / 2;
       const w = halfWidth(v);
       for (let i = 0; i < cols; i++) {
-        const u = (i / SEG_U) * 2 - 1;
+        const u = (i / SPAN_SEGMENTS) * 2 - 1;
         const k = s * perSurface + j * cols + i;
         const h = thickness(u, v);
         base[k * 3] = u * w;
@@ -68,7 +63,7 @@ function buildBody() {
         base[k * 3 + 2] = (0.5 - v) * LENGTH;
         uv[k * 2] = u;
         uv[k * 2 + 1] = v;
-        if (top) c.copy(TOP).lerp(EDGE, ((Math.abs(u) * w) / SPAN) ** 2);
+        if (top) c.copy(TOP).lerp(EDGE, ((Math.abs(u) * w) / HALF_SPAN) ** 2);
         else c.copy(BELLY);
         colors.set([c.r, c.g, c.b], k * 3);
       }
@@ -78,13 +73,13 @@ function buildBody() {
   const index: number[] = [];
   for (let s = 0; s < 2; s++) {
     const o = s * perSurface;
-    for (let j = 0; j < SEG_V; j++) {
-      for (let i = 0; i < SEG_U; i++) {
+    for (let j = 0; j < LENGTH_SEGMENTS; j++) {
+      for (let i = 0; i < SPAN_SEGMENTS; i++) {
         const a = o + j * cols + i;
         const b = a + 1;
         const d = a + cols;
         const e = d + 1;
-        // Opposite winding on the belly so both surfaces face outward.
+        // The belly winds the other way so both surfaces face outward.
         if (s === 0) index.push(a, b, d, b, e, d);
         else index.push(a, d, b, b, d, e);
       }
@@ -100,7 +95,6 @@ function buildBody() {
 }
 
 function buildTail() {
-  // Thin cone lying along -z, starting just inside the rear of the disc.
   const geometry = new CylinderGeometry(0.08, 0.004, TAIL_LENGTH, 10, 32, true);
   geometry.rotateX(-Math.PI / 2);
   geometry.translate(0, 0, -LENGTH / 2 - TAIL_LENGTH / 2 + 0.15);
@@ -113,8 +107,7 @@ function useFollowCursor(still: boolean) {
   const { viewport, gl } = useThree();
   const state = useMemo(() => ({ cursor: new Vector3(), target: new Vector3(), active: false }), []);
 
-  // Track the mouse anywhere on the page (the canvas itself ignores pointer events so it never
-  // blocks clicks or scrolling). Touch and pen input are ignored, so phones just watch it swim.
+  // Listen on window because the canvas ignores pointer events, so it never blocks clicks or scrolling.
   useEffect(() => {
     if (still) return;
     const onMove = (e: PointerEvent) => {
@@ -122,7 +115,7 @@ function useFollowCursor(still: boolean) {
       const rect = gl.domElement.getBoundingClientRect();
       const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      // Camera looks straight down -z, so NDC maps linearly onto the z = 0 plane.
+      // The camera looks straight down -z, so NDC maps linearly onto the z = 0 plane.
       state.cursor.set(
         MathUtils.clamp(nx, -1, 1) * (viewport.width / 2),
         MathUtils.clamp(ny, -1, 1) * (viewport.height / 2),
@@ -134,13 +127,13 @@ function useFollowCursor(still: boolean) {
     return () => window.removeEventListener("pointermove", onMove);
   }, [gl, viewport, still, state]);
 
-  // Drift slowly toward the cursor and bank into the direction of travel.
   useFrame((_, delta) => {
     const g = follow.current;
     if (!g?.parent || !state.active) return;
     state.target.copy(state.cursor);
     g.parent.worldToLocal(state.target);
-    const ease = 1 - Math.exp(-delta * 0.9); // frame-rate independent; ~1s to close most of the gap
+    // Exponential easing on delta keeps the drift speed independent of frame rate.
+    const ease = 1 - Math.exp(-delta * 0.9);
     const dx = state.target.x - g.position.x;
     g.position.lerp(state.target, ease);
     g.rotation.z = MathUtils.lerp(g.rotation.z, MathUtils.clamp(-dx * 0.25, -0.45, 0.45), ease * 2);
@@ -149,6 +142,14 @@ function useFollowCursor(still: boolean) {
   return follow;
 }
 
+/**
+ * Procedural stingray whose fins ripple nose to tail.
+ * On desktop it slowly follows the mouse; touch input is ignored.
+ *
+ * Model space: x spans the wings, y is up, and the nose points to +z.
+ *
+ * @param still - Freeze the animation, for `prefers-reduced-motion`.
+ */
 export function Stingray({ still = false }: { still?: boolean }) {
   const swim = useRef<Group>(null);
   const body = useMemo(buildBody, []);
@@ -158,13 +159,12 @@ export function Stingray({ still = false }: { still?: boolean }) {
   useFrame(({ clock }) => {
     const t = still ? 0.6 : clock.elapsedTime;
 
-    // Fin ripple: amplitude grows toward the wingtips, wave travels nose → tail.
     const pos = body.geometry.getAttribute("position") as BufferAttribute;
     const arr = pos.array as Float32Array;
-    // Scale by real distance from the midline, not the normalized row position: rows at the
-    // snout and rear are narrow, and flapping their edges fully would pinch the tips into points.
     for (let k = 0; k < arr.length / 3; k++) {
-      const reach = Math.abs(body.base[k * 3]) / SPAN;
+      // Scale by real distance from the midline, not the row-relative u.
+      // Rows at the snout and rear are narrow, and flapping their edges fully pinches the tips.
+      const reach = Math.abs(body.base[k * 3]) / HALF_SPAN;
       const v = body.uv[k * 2 + 1];
       const flap = 0.38 * reach ** 2 * Math.sin(t * 2.1 - v * 3.2);
       arr[k * 3 + 1] = body.base[k * 3 + 1] + flap;
@@ -172,17 +172,15 @@ export function Stingray({ still = false }: { still?: boolean }) {
     pos.needsUpdate = true;
     body.geometry.computeVertexNormals();
 
-    // Tail: lateral sway that lags further down the whip.
     const tpos = tail.geometry.getAttribute("position") as BufferAttribute;
     const tarr = tpos.array as Float32Array;
     for (let k = 0; k < tarr.length / 3; k++) {
-      const d = Math.max(0, -tail.base[k * 3 + 2] - LENGTH / 2) / TAIL_LENGTH; // 0 at root → 1 at tip
-      tarr[k * 3] = tail.base[k * 3] + Math.sin(t * 2.1 - d * 4) * 0.22 * d * d;
-      tarr[k * 3 + 1] = tail.base[k * 3 + 1] + Math.sin(t * 2.1 - 3.2 - d * 3) * 0.08 * d;
+      const towardTip = Math.max(0, -tail.base[k * 3 + 2] - LENGTH / 2) / TAIL_LENGTH;
+      tarr[k * 3] = tail.base[k * 3] + Math.sin(t * 2.1 - towardTip * 4) * 0.22 * towardTip ** 2;
+      tarr[k * 3 + 1] = tail.base[k * 3 + 1] + Math.sin(t * 2.1 - 3.2 - towardTip * 3) * 0.08 * towardTip;
     }
     tpos.needsUpdate = true;
 
-    // Whole-body glide: gentle bob and roll.
     if (swim.current && !still) {
       swim.current.position.y = Math.sin(t * 0.8) * 0.12;
       swim.current.rotation.z = Math.sin(t * 0.5) * 0.12;

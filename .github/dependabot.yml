@@ -3,11 +3,19 @@ updates:
   - package-ecosystem: bun
     directory: /
     schedule: { interval: weekly }
+    # Let new releases age a week before adopting them, to dodge compromised or yanked versions.
+    cooldown: { default-days: 7 }
     groups:
       react-three:
         patterns: ["three", "@types/three", "@react-three/*"]
       next-react:
         patterns: ["next", "react", "react-dom", "@types/react*"]
+      dev-tooling:
+        dependency-type: development
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
+    cooldown: { default-days: 7 }
+    groups:
+      actions:
+        patterns: ["*"]
