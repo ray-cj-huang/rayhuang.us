@@ -4,13 +4,15 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
 import { type AmbientLight, Color, type DirectionalLight, FogExp2, SRGBColorSpace, Vector3 } from "three";
+import type { Obstacle } from "./boids";
 import { FishSchool, type SchoolBehavior } from "./fish-school";
+import { BOMMIES, FLOOR_Y, REEF_OBSTACLES } from "./layout";
 import { Caustics, GodRays } from "./light-rays";
 import { MarineSnow } from "./marine-snow";
 import { DARK_WATER, LIGHT_WATER, waterColorAt } from "./palette";
-import { Reef } from "./reef";
+import { type RayState, Reef } from "./reef";
 import { getScrollDepth } from "./scroll-depth";
-import { BAR_JACK, BLUE_CHROMIS, BLUEHEAD_WRASSE, CLEANING_STATION, FLOOR_Y, FRENCH_GRUNT } from "./species";
+import { BAITFISH, FRENCH_GRUNT } from "./species";
 import { Stingray } from "./stingray";
 
 function Water({ dark, still }: { dark: boolean; still: boolean }) {
@@ -62,46 +64,50 @@ function CameraRig() {
   return null;
 }
 
-function useBehaviors(ray: Vector3) {
+// The ray's solid mass, as an ellipsoid fish can't enter; sized to its wings and tilted disc.
+function rayObstacle(ray: RayState): Obstacle {
+  return {
+    position: [ray.position.x, ray.position.y, ray.position.z],
+    radii: [1.8 * ray.scale, 0.8 * ray.scale, 1 * ray.scale],
+  };
+}
+
+function useBehaviors(ray: RayState) {
   return useMemo(() => {
-    const avoidRay = () => ({
-      position: [ray.x, ray.y, ray.z] as [number, number, number],
-      radius: 1.8,
-      weight: 7,
+    const flee = () => ({
+      position: [ray.position.x, ray.position.y, ray.position.z] as [number, number, number],
+      radius: 2.6 * ray.scale,
+      weight: 9,
     });
-    // Bar jacks hover above and behind a foraging ray to snatch prey it flushes from the sand.
-    const jacks: SchoolBehavior = () => ({
-      goal: [ray.x, ray.y + 0.6, ray.z - 0.5],
-      goalWeight: 1.4,
-      threat: undefined,
+    const obstacles = () => [...REEF_OBSTACLES, rayObstacle(ray)];
+    // Baitfish mill in a slowly drifting ball, and part around the ray as it passes.
+    const baitfish: SchoolBehavior = (t) => ({
+      goal: [
+        -1.2 + Math.sin(t * 0.05) * 2.5 + Math.cos(t * 0.55) * 1.3,
+        FLOOR_Y + 2.6 + Math.sin(t * 0.3) * 0.25,
+        -6.5 + Math.sin(t * 0.55) * 1.3,
+      ],
+      goalWeight: 0.9,
+      threat: flee(),
+      obstacles: obstacles(),
+      minDistance: 0.12,
     });
-    const grunts: SchoolBehavior = (t) => ({
-      goal: [3.4 + Math.sin(t * 0.1) * 1.6, FLOOR_Y + 0.6, -6.8 + Math.cos(t * 0.08) * 1.4],
-      goalWeight: 0.3,
-      threat: avoidRay(),
-    });
-    const chromis: SchoolBehavior = (t) => ({
-      goal: [-1.5 + Math.sin(t * 0.06) * 3, FLOOR_Y + 1.7, -7.5 + Math.cos(t * 0.05) * 2],
-      goalWeight: 0.2,
-      threat: avoidRay(),
-    });
-    // Wrasse stay at their cleaning station, and swim out to clean the ray when it passes close.
-    const wrasse: SchoolBehavior = (t) => {
-      const [sx, sy, sz] = CLEANING_STATION;
-      const cleaning = Math.hypot(ray.x - sx, ray.y - sy, ray.z - sz) < 2.6;
-      return cleaning
-        ? { goal: [ray.x, ray.y, ray.z], goalWeight: 1.2, threat: undefined }
-        : {
-            goal: [sx + Math.sin(t * 0.7) * 0.4, sy + 0.25, sz + Math.cos(t * 0.5) * 0.4],
-            goalWeight: 0.9,
-            threat: undefined,
-          };
+    // Grunts hover around the coral heads, drifting between them.
+    const grunts: SchoolBehavior = (t) => {
+      const home = BOMMIES[Math.floor(t / 40) % BOMMIES.length];
+      return {
+        goal: [home.x + Math.sin(t * 0.3) * 1.4, FLOOR_Y + 0.8, home.z + 1.4 + Math.cos(t * 0.25) * 0.8],
+        goalWeight: 0.35,
+        threat: flee(),
+        obstacles: obstacles(),
+        minDistance: 0.14,
+      };
     };
-    return { jacks, grunts, chromis, wrasse };
+    return { baitfish, grunts };
   }, [ray]);
 }
 
-function RayPlacement({ still, worldPosition }: { still: boolean; worldPosition: Vector3 }) {
+function RayPlacement({ still, ray }: { still: boolean; ray: RayState }) {
   const { viewport } = useThree();
 
   // On phones the hero text is bottom-aligned, so the ray uses the open space above it.
@@ -109,10 +115,17 @@ function RayPlacement({ still, worldPosition }: { still: boolean; worldPosition:
   const x = wide ? viewport.width * 0.2 : 0;
   const y = wide ? 0.1 : viewport.height * 0.24;
   const scale = wide ? 0.95 : Math.min(0.6, viewport.width / 5.2);
+  ray.scale = scale;
 
   return (
     <group position={[x, y, 0]} scale={scale}>
-      <Stingray still={still} worldPosition={worldPosition} minWorldY={FLOOR_Y + 0.5} />
+      <Stingray
+        still={still}
+        worldPosition={ray.position}
+        worldSpan={ray.span}
+        minWorldY={FLOOR_Y + 0.5}
+        mounds={BOMMIES}
+      />
     </group>
   );
 }
@@ -121,8 +134,11 @@ export default function OceanScene() {
   const still = useReducedMotion() ?? false;
   const narrow = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   const dark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const rayPosition = useMemo(() => new Vector3(), []);
-  const behaviors = useBehaviors(rayPosition);
+  const ray = useMemo<RayState>(
+    () => ({ position: new Vector3(), span: new Vector3(1, 0, 0), scale: 1 }),
+    [],
+  );
+  const behaviors = useBehaviors(ray);
   const n = (s: { count: { desktop: number; mobile: number } }) =>
     narrow ? s.count.mobile : s.count.desktop;
 
@@ -138,18 +154,11 @@ export default function OceanScene() {
       <CameraRig />
       <GodRays still={still} />
       {!narrow && <Caustics still={still} />}
-      <Reef still={still} lite={narrow} />
+      <Reef still={still} ray={ray} />
       <MarineSnow count={narrow ? 150 : 400} still={still} />
-      <FishSchool species={BAR_JACK} count={n(BAR_JACK)} behavior={behaviors.jacks} still={still} />
+      <FishSchool species={BAITFISH} count={n(BAITFISH)} behavior={behaviors.baitfish} still={still} />
       <FishSchool species={FRENCH_GRUNT} count={n(FRENCH_GRUNT)} behavior={behaviors.grunts} still={still} />
-      <FishSchool species={BLUE_CHROMIS} count={n(BLUE_CHROMIS)} behavior={behaviors.chromis} still={still} />
-      <FishSchool
-        species={BLUEHEAD_WRASSE}
-        count={n(BLUEHEAD_WRASSE)}
-        behavior={behaviors.wrasse}
-        still={still}
-      />
-      <RayPlacement still={still} worldPosition={rayPosition} />
+      <RayPlacement still={still} ray={ray} />
     </Canvas>
   );
 }

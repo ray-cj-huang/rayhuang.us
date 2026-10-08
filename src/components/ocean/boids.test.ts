@@ -71,4 +71,37 @@ describe("stepFlock", () => {
     for (let s = 0; s < 60; s++) stepFlock(flock, { ...params, goal: undefined, threat }, 1 / 60);
     expect(Math.hypot(flock.position[0], flock.position[1], flock.position[2] + 1)).toBeGreaterThan(0.2);
   });
+
+  test("never leaves a fish inside an obstacle", () => {
+    const obstacle = {
+      position: [0, 0, -1.5] as [number, number, number],
+      radii: [1.2, 0.5, 0.8] as [number, number, number],
+    };
+    const flock = createFlock(36, params.bounds, seeded(3));
+    for (let s = 0; s < 1500; s++) {
+      // Move the obstacle around like the stingray does, sweeping through the school.
+      obstacle.position[0] = Math.sin(s / 90) * 2;
+      stepFlock(flock, { ...params, obstacles: [obstacle], minDistance: 0.08 }, 1 / 60);
+      for (let i = 0; i < flock.count; i++) {
+        const [x, y, z] = [flock.position[i * 3], flock.position[i * 3 + 1], flock.position[i * 3 + 2]];
+        const d = Math.hypot((x - obstacle.position[0]) / 1.2, y / 0.5, (z + 1.5) / 0.8);
+        expect(d).toBeGreaterThanOrEqual(0.999);
+      }
+    }
+  });
+
+  test("keeps fish at least the minimum distance apart", () => {
+    const flock = createFlock(36, params.bounds, seeded(9));
+    for (let s = 0; s < 600; s++) stepFlock(flock, { ...params, cohesion: 3, minDistance: 0.1 }, 1 / 60);
+    for (let i = 0; i < flock.count; i++) {
+      for (let j = i + 1; j < flock.count; j++) {
+        const d = Math.hypot(
+          flock.position[i * 3] - flock.position[j * 3],
+          flock.position[i * 3 + 1] - flock.position[j * 3 + 1],
+          flock.position[i * 3 + 2] - flock.position[j * 3 + 2],
+        );
+        expect(d).toBeGreaterThan(0.1 * 0.9);
+      }
+    }
+  });
 });

@@ -117,7 +117,14 @@ function cruisingDepth(t: number) {
   );
 }
 
-function useSwimPath(still: boolean, worldPosition?: Vector3, minWorldY = Number.NEGATIVE_INFINITY) {
+type Mound = { x: number; z: number; radius: number; height: number };
+
+function useSwimPath(
+  still: boolean,
+  worldPosition?: Vector3,
+  minWorldY = Number.NEGATIVE_INFINITY,
+  mounds: readonly Mound[] = [],
+) {
   const follow = useRef<Group>(null);
   const { camera } = useThree();
   const state = useMemo(
@@ -134,6 +141,14 @@ function useSwimPath(still: boolean, worldPosition?: Vector3, minWorldY = Number
     }),
     [],
   );
+
+  // Lowest world y the ray's center may reach here: above the sand, and well above any coral head below it.
+  const floorUnder = (x: number, z: number) =>
+    mounds.reduce(
+      (lowest, m) =>
+        Math.hypot(x - m.x, z - m.z) < m.radius + 1.4 ? Math.max(lowest, minWorldY + m.height + 0.2) : lowest,
+      minWorldY,
+    );
 
   // Listen on window because the canvas ignores pointer events, so it never blocks clicks or scrolling.
   useEffect(() => {
@@ -162,7 +177,7 @@ function useSwimPath(still: boolean, worldPosition?: Vector3, minWorldY = Number
       state.plane.constant = -state.world.z;
       state.raycaster.setFromCamera(state.ndc, camera);
       if (state.raycaster.ray.intersectPlane(state.plane, state.hit)) {
-        state.hit.y = Math.max(state.hit.y, minWorldY);
+        state.hit.y = Math.max(state.hit.y, floorUnder(state.hit.x, state.hit.z));
         g.parent.worldToLocal(state.hit);
         state.target.x = state.hit.x;
         state.target.y = state.hit.y;
@@ -183,7 +198,15 @@ function useSwimPath(still: boolean, worldPosition?: Vector3, minWorldY = Number
     g.rotation.x = MathUtils.lerp(g.rotation.x, MathUtils.clamp(-vy * 0.4, -0.4, 0.4), turn);
     g.rotation.z = MathUtils.lerp(g.rotation.z, MathUtils.clamp(-vx * 0.35, -0.45, 0.45), turn);
 
-    if (worldPosition) g.getWorldPosition(worldPosition);
+    // Glide over coral heads rather than through them.
+    g.getWorldPosition(state.world);
+    const floor = floorUnder(state.world.x, state.world.z);
+    if (state.world.y < floor) {
+      state.world.y = floor;
+      g.position.copy(g.parent.worldToLocal(state.world));
+      g.getWorldPosition(state.world);
+    }
+    if (worldPosition) worldPosition.copy(state.world);
   });
 
   return { follow, motion: state };
@@ -199,22 +222,28 @@ function useSwimPath(still: boolean, worldPosition?: Vector3, minWorldY = Number
  *
  * @param still - Freeze the animation, for `prefers-reduced-motion`.
  * @param worldPosition - Receives the ray's world position every frame, e.g. for fish to avoid.
- * @param minWorldY - Lowest world y it will follow the cursor to, to keep it above the seafloor.
+ * @param worldSpan - Receives the world direction of its wingspan every frame, e.g. to orient its shadow.
+ * @param minWorldY - Lowest world y it may swim to, to keep it above the seafloor.
+ * @param mounds - Coral heads it rises over instead of passing through.
  */
 export function Stingray({
   still = false,
   worldPosition,
+  worldSpan,
   minWorldY,
+  mounds,
 }: {
   still?: boolean;
   worldPosition?: Vector3;
+  worldSpan?: Vector3;
   minWorldY?: number;
+  mounds?: readonly Mound[];
 }) {
   const swim = useRef<Group>(null);
   const finPhase = useRef(0);
   const body = useMemo(buildBody, []);
   const tail = useMemo(buildTail, []);
-  const { follow, motion } = useSwimPath(still, worldPosition, minWorldY);
+  const { follow, motion } = useSwimPath(still, worldPosition, minWorldY, mounds);
 
   useFrame(({ clock }, delta) => {
     const t = still ? 0.6 : clock.elapsedTime;
@@ -245,6 +274,7 @@ export function Stingray({
     }
     tpos.needsUpdate = true;
 
+    if (worldSpan && swim.current) worldSpan.set(1, 0, 0).transformDirection(swim.current.matrixWorld);
     if (swim.current && !still) {
       swim.current.position.y = Math.sin(t * 0.8) * 0.12;
       swim.current.rotation.z = Math.sin(t * 0.5) * 0.12;

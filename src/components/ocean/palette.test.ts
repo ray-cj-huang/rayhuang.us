@@ -5,8 +5,8 @@ const luminance = ([r, g, b]: readonly number[]) => 0.2126 * r + 0.7152 * g + 0.
 
 describe("waterColorAt", () => {
   test("matches the surface and deep stops exactly", () => {
-    expect(waterColorAt(0)).toEqual([0xd9 / 255, 0xf2 / 255, 0xfb / 255]);
-    expect(waterColorAt(1)).toEqual([0x13 / 255, 0x4a / 255, 0x73 / 255]);
+    expect(waterColorAt(0)).toEqual([0xc9 / 255, 0xf1 / 255, 0xee / 255]);
+    expect(waterColorAt(1)).toEqual([0x0b / 255, 0x4f / 255, 0x86 / 255]);
   });
 
   test("clamps depth outside 0..1", () => {

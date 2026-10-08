@@ -34,11 +34,14 @@ Project skills live in `.claude/skills/`. Use them:
 - **Motion** (`motion/react`) for UI animation.
   Wrap scroll-in content in `<Reveal>` from `src/components/reveal.tsx` instead of hand-rolling `motion.div`s.
 - **three.js via React Three Fiber and drei** for a fixed, full-page ocean (`src/components/ocean/`).
-  It models a Caribbean sand flat beside a patch reef, where southern stingrays live.
-  Scrolling descends: the water deepens and the view tilts toward the seafloor, with god rays, caustics and marine snow.
-  A procedural stingray drifts near and far and slowly follows the mouse on desktop; it ignores touch and is not draggable.
-  Species and behaviors are researched, not invented: bar jacks shadow the ray, bluehead wrasse clean it at a coral
-  station, and French grunts and blue chromis school by the reef and shy away from it. Don't add freshwater species.
+  It models an open Caribbean sand flat with two coral heads, where southern stingrays forage.
+  Keep the seafloor sparse: rays favor open sand, and a busy floor competes with the content.
+  Scrolling descends: turquoise shallows deepen to ocean blue and the view tilts toward the sand.
+  A procedural stingray drifts near and far, slowly follows the mouse on desktop (never touch), and casts a soft shadow.
+  Fish never follow the cursor: a baitfish ball and a few French grunts school on their own and avoid the ray.
+- **Nothing passes through anything.** `boids.ts` steers fish around ellipsoid obstacles (the ray, coral heads,
+  seaweed) and then enforces it with hard constraints, plus a minimum fish-to-fish distance.
+  The two species swim in separate height bands, and the ray rises over coral heads instead of entering them.
 - **Biome** for lint and format (no ESLint or Prettier). **bun test** for unit tests.
 
 ## Layout
@@ -47,7 +50,7 @@ Project skills live in `.claude/skills/`. Use them:
 src/
   app/            routes, layout, metadata, sitemap/robots, globals.css
   components/     sections.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
-  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef, light-rays, marine-snow;
+  components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef + layout, light-rays, marine-snow;
                   pure, unit-tested logic in boids.ts and palette.ts; seeded layout via random.ts
   content/site.ts all copy, links and roles; edit here, not in components
 public/           static assets; CNAME must stay `rayhuang.us`

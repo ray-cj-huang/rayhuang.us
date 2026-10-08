@@ -100,7 +100,9 @@ function buildMaterial(species: Species) {
   return material;
 }
 
-export type SchoolBehavior = (time: number) => Pick<FlockParams, "goal" | "goalWeight" | "threat">;
+export type SchoolBehavior = (
+  time: number,
+) => Pick<FlockParams, "goal" | "goalWeight" | "threat" | "obstacles" | "minDistance">;
 
 /**
  * One species of procedural fish, flocking with boids.

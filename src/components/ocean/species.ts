@@ -1,10 +1,6 @@
 import { Color } from "three";
 import type { FlockParams } from "./boids";
-
-export const FLOOR_Y = -2.4;
-
-/** A bluehead wrasse cleaning station on a brain coral head, which rays visit to have parasites picked off. */
-export const CLEANING_STATION: [number, number, number] = [3.2, FLOOR_Y + 0.55, -6];
+import { FLOOR_Y } from "./layout";
 
 type Shading = (back: number, along: number) => Color;
 
@@ -28,34 +24,33 @@ export type Species = {
 
 const c = (hex: string) => new Color(hex);
 
-/** Silver with a dark back stripe; shadows foraging rays to snatch prey they stir from the sand. */
-export const BAR_JACK: Species = {
-  length: 0.5,
-  height: 0.075,
-  width: 0.4,
-  shade: (back) =>
-    back > 0.45 && back < 0.8 ? c("#1c2b45") : c("#dfe6ec").lerp(c("#6f8fa8"), Math.max(0, back)),
-  fin: "#2a3d5c",
-  tailBeat: 1.6,
-  count: { desktop: 5, mobile: 3 },
+/** Small silver schooling fish (sardines, silversides) that mill in a tight ball and part around predators. */
+export const BAITFISH: Species = {
+  length: 0.17,
+  height: 0.026,
+  width: 0.5,
+  shade: (back) => c("#eef4f7").lerp(c("#3f6383"), Math.max(0, (back + 0.2) / 1.2)),
+  fin: "#9fb4c6",
+  tailBeat: 3.4,
+  count: { desktop: 90, mobile: 36 },
   flock: {
-    minSpeed: 0.5,
-    maxSpeed: 1.8,
-    neighborRadius: 1.2,
-    separationRadius: 0.45,
-    separation: 5,
-    alignment: 0.8,
-    cohesion: 0.3,
-    bounds: { min: [-7, FLOOR_Y + 0.3, -6], max: [7, 2, 1] },
+    minSpeed: 0.6,
+    maxSpeed: 1.7,
+    neighborRadius: 1,
+    separationRadius: 0.17,
+    separation: 8,
+    alignment: 2.2,
+    cohesion: 1.6,
+    bounds: { min: [-7, FLOOR_Y + 1.6, -11], max: [7, 1.8, -2] },
     boundsMargin: 0.6,
-    boundsWeight: 1.5,
+    boundsWeight: 2,
   },
 };
 
-/** Gold with blue stripes; schools low around patch reefs by day. */
+/** Gold with blue stripes; small groups hang around coral heads by day. */
 export const FRENCH_GRUNT: Species = {
-  length: 0.3,
-  height: 0.06,
+  length: 0.28,
+  height: 0.055,
   width: 0.45,
   shade: (back, along) => {
     const stripe = (((back * 2.6 + along * 0.7) % 1) + 1) % 1 < 0.2;
@@ -63,63 +58,17 @@ export const FRENCH_GRUNT: Species = {
   },
   fin: "#e6a91c",
   tailBeat: 2.2,
-  count: { desktop: 22, mobile: 10 },
-  flock: {
-    minSpeed: 0.25,
-    maxSpeed: 0.9,
-    neighborRadius: 1.2,
-    separationRadius: 0.2,
-    separation: 6,
-    alignment: 1.6,
-    cohesion: 1.1,
-    bounds: { min: [-7, FLOOR_Y + 0.15, -10], max: [7, FLOOR_Y + 1.6, -2] },
-    boundsMargin: 0.4,
-    boundsWeight: 2,
-  },
-};
-
-/** Small, bright blue plankton-pickers that hover in loose schools above the reef. */
-export const BLUE_CHROMIS: Species = {
-  length: 0.17,
-  height: 0.04,
-  width: 0.45,
-  shade: (back) => c("#8ec2f5").lerp(c("#1f6fd6"), (back + 1) / 2),
-  fin: "#2a7de0",
-  tailBeat: 3,
-  count: { desktop: 26, mobile: 12 },
-  flock: {
-    minSpeed: 0.3,
-    maxSpeed: 1.1,
-    neighborRadius: 1,
-    separationRadius: 0.16,
-    separation: 6,
-    alignment: 1.4,
-    cohesion: 0.9,
-    bounds: { min: [-7, FLOOR_Y + 0.9, -11], max: [7, 1.6, -2] },
-    boundsMargin: 0.5,
-    boundsWeight: 1.8,
-  },
-};
-
-/** Initial-phase bluehead wrasse: yellow with a dark midline stripe; the Caribbean's main cleaner fish. */
-export const BLUEHEAD_WRASSE: Species = {
-  length: 0.16,
-  height: 0.03,
-  width: 0.4,
-  shade: (back) => (back > -0.15 && back < 0.2 ? c("#2b2b2b") : c("#f5d33a")),
-  fin: "#f0c020",
-  tailBeat: 3.2,
-  count: { desktop: 8, mobile: 4 },
+  count: { desktop: 9, mobile: 5 },
   flock: {
     minSpeed: 0.2,
-    maxSpeed: 1.4,
-    neighborRadius: 0.6,
-    separationRadius: 0.14,
-    separation: 5,
-    alignment: 0.4,
-    cohesion: 0.3,
-    bounds: { min: [-7, FLOOR_Y + 0.1, -9], max: [7, FLOOR_Y + 2.5, -1] },
-    boundsMargin: 0.3,
+    maxSpeed: 0.9,
+    neighborRadius: 1.2,
+    separationRadius: 0.22,
+    separation: 6,
+    alignment: 1.4,
+    cohesion: 1,
+    bounds: { min: [-8, FLOOR_Y + 0.2, -12], max: [8, FLOOR_Y + 1.3, -5] },
+    boundsMargin: 0.4,
     boundsWeight: 2,
   },
 };

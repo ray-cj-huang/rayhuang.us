@@ -1,5 +1,8 @@
 export type Vec3 = [x: number, y: number, z: number];
 
+/** An axis-aligned ellipsoid that fish steer around and can never enter. */
+export type Obstacle = { position: Vec3; radii: Vec3 };
+
 export type Flock = {
   count: number;
   /** xyz per fish, packed. */
@@ -23,7 +26,22 @@ export type FlockParams = {
   goal?: Vec3;
   goalWeight?: number;
   threat?: { position: Vec3; radius: number; weight: number };
+  obstacles?: readonly Obstacle[];
+  /** Closest two fish may ever be, enforced after every step. */
+  minDistance?: number;
 };
+
+const AVOID_MARGIN = 0.6;
+const AVOID_WEIGHT = 6;
+
+/** Distance from an ellipsoid's center in units of its radii: under 1 means inside. */
+function ellipsoidDistance(o: Obstacle, x: number, y: number, z: number) {
+  return Math.hypot(
+    (x - o.position[0]) / o.radii[0],
+    (y - o.position[1]) / o.radii[1],
+    (z - o.position[2]) / o.radii[2],
+  );
+}
 
 export function createFlock(count: number, bounds: FlockParams["bounds"], random = Math.random): Flock {
   const position = new Float32Array(count * 3);
@@ -87,6 +105,20 @@ export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
       accel[ix + a] = acc;
     }
 
+    for (const o of p.obstacles ?? []) {
+      const d = ellipsoidDistance(o, pos[ix], pos[ix + 1], pos[ix + 2]);
+      if (d >= 1 + AVOID_MARGIN || d < 1e-6) continue;
+      // Steer along the ellipsoid's outward normal, harder the closer the fish gets.
+      const push = ((1 + AVOID_MARGIN - d) / AVOID_MARGIN) * AVOID_WEIGHT;
+      const nx = (pos[ix] - o.position[0]) / o.radii[0] ** 2;
+      const ny = (pos[ix + 1] - o.position[1]) / o.radii[1] ** 2;
+      const nz = (pos[ix + 2] - o.position[2]) / o.radii[2] ** 2;
+      const n = Math.hypot(nx, ny, nz) || 1;
+      accel[ix] += (nx / n) * push;
+      accel[ix + 1] += (ny / n) * push;
+      accel[ix + 2] += (nz / n) * push;
+    }
+
     if (p.threat) {
       const t = p.threat;
       const dx = pos[ix] - t.position[0];
@@ -122,6 +154,56 @@ export function stepFlock(flock: Flock, p: FlockParams, dt: number): void {
         pos[ix + a] = p.bounds.max[a];
         vel[ix + a] = -Math.abs(vel[ix + a]);
       }
+    }
+  }
+
+  // Hard constraints back up the steering, so no fish ever ends up inside an obstacle or another fish.
+  for (let pass = 0; pass < 2; pass++) {
+    if (p.minDistance) separateOverlaps(flock, p.minDistance);
+    for (const o of p.obstacles ?? []) pushOutOf(flock, o);
+  }
+}
+
+function separateOverlaps({ count, position: pos }: Flock, minDistance: number) {
+  for (let i = 0; i < count; i++) {
+    for (let j = i + 1; j < count; j++) {
+      const dx = pos[j * 3] - pos[i * 3];
+      const dy = pos[j * 3 + 1] - pos[i * 3 + 1];
+      const dz = pos[j * 3 + 2] - pos[i * 3 + 2];
+      const dist = Math.hypot(dx, dy, dz);
+      if (dist >= minDistance) continue;
+      const [ux, uy, uz] = dist > 1e-6 ? [dx / dist, dy / dist, dz / dist] : [1, 0, 0];
+      const half = (minDistance - dist) / 2;
+      pos[i * 3] -= ux * half;
+      pos[i * 3 + 1] -= uy * half;
+      pos[i * 3 + 2] -= uz * half;
+      pos[j * 3] += ux * half;
+      pos[j * 3 + 1] += uy * half;
+      pos[j * 3 + 2] += uz * half;
+    }
+  }
+}
+
+function pushOutOf({ count, position: pos, velocity: vel }: Flock, o: Obstacle) {
+  for (let i = 0; i < count; i++) {
+    const ix = i * 3;
+    const d = ellipsoidDistance(o, pos[ix], pos[ix + 1], pos[ix + 2]);
+    if (d >= 1) continue;
+    const scale = d > 1e-6 ? 1.001 / d : 0;
+    for (let a = 0; a < 3; a++) {
+      const offset = pos[ix + a] - o.position[a];
+      pos[ix + a] = o.position[a] + (scale ? offset * scale : a === 1 ? o.radii[1] * 1.001 : 0);
+    }
+    // Drop the velocity component pointing into the obstacle so the fish slides along its surface.
+    const nx = (pos[ix] - o.position[0]) / o.radii[0] ** 2;
+    const ny = (pos[ix + 1] - o.position[1]) / o.radii[1] ** 2;
+    const nz = (pos[ix + 2] - o.position[2]) / o.radii[2] ** 2;
+    const n = Math.hypot(nx, ny, nz) || 1;
+    const inward = (vel[ix] * nx + vel[ix + 1] * ny + vel[ix + 2] * nz) / n;
+    if (inward < 0) {
+      vel[ix] -= (inward * nx) / n;
+      vel[ix + 1] -= (inward * ny) / n;
+      vel[ix + 2] -= (inward * nz) / n;
     }
   }
 }

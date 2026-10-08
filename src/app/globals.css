@@ -3,7 +3,7 @@
 :root {
   /* 0 at the top of the page to 1 at the bottom; set by SceneBackdrop on scroll. */
   --depth: 0;
-  --surface: #d9f2fb;
+  --surface: #c9f1ee;
   --ink-top: #0f172a;
   --ink-deep: #e6f1fb;
   --muted-top: #3f5466;

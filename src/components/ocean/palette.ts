@@ -3,10 +3,10 @@ export type Rgb = readonly [r: number, g: number, b: number];
 type Stop = readonly [depth: number, hex: string];
 
 export const LIGHT_WATER: readonly Stop[] = [
-  [0, "#d9f2fb"],
-  [0.3, "#8fd0e6"],
-  [0.65, "#3b88b5"],
-  [1, "#134a73"],
+  [0, "#c9f1ee"],
+  [0.3, "#6fd0d2"],
+  [0.65, "#1f86b3"],
+  [1, "#0b4f86"],
 ];
 
 export const DARK_WATER: readonly Stop[] = [
