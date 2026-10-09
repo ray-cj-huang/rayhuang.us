@@ -18,7 +18,6 @@ export const metadata: Metadata = {
     images: [{ url: site.avatar, width: 400, height: 400, alt: site.name }],
   },
   twitter: { card: "summary", title: site.name, description: site.description },
-  icons: { apple: "/apple-touch-icon-180x180.png" },
 };
 
 export const viewport: Viewport = {

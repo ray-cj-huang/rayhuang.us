@@ -34,4 +34,10 @@ describe("site content", () => {
     const cname = (await Bun.file(publicPath("CNAME")).text()).trim();
     expect(new URL(site.url).hostname).toBe(cname);
   });
+
+  test("every role links to its company's LinkedIn page", () => {
+    for (const role of work) {
+      expect(role.orgUrl, role.org).toMatch(/^https:\/\/www\.linkedin\.com\/company\/[\w-]+\/$/);
+    }
+  });
 });
