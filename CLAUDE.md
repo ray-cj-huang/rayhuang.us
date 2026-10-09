@@ -79,6 +79,10 @@ public/           static assets; CNAME must stay `rayhuang.us`
 - New images go in `public/images/` and are referenced as `/images/...`.
   `src/content/site.test.ts` fails if a referenced image is missing or a link isn't https; extend it for new content types.
 - Strip EXIF/GPS metadata from photos before committing them.
+- Company logos in `public/images/logos/` come from each company's LinkedIn page (`og:image`), re-encoded as JPEG.
+- Icons follow the favicon "six files" practice: `src/app/favicon.ico` (16/32/48), `icon.png` (192),
+  `apple-icon.png` (180, full bleed) and `manifest.ts` with 192/512 and a maskable 512 in `public/`.
+  They're renders of the scene's stingray on a turquoise tile; re-render rather than hand-draw if it changes.
 - Accessibility: decorative images get `alt=""`, sections use `aria-labelledby`,
   and links that open a new tab use `rel="noreferrer"`.
 

@@ -61,7 +61,7 @@ function OrgMark({ role }: { role: Role }) {
         alt=""
         width={48}
         height={48}
-        className="size-12 shrink-0 rounded-lg bg-white object-contain p-1"
+        className="size-12 shrink-0 rounded-lg object-cover"
       />
     );
   }

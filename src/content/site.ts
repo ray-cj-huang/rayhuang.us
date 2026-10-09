@@ -4,7 +4,7 @@ export type Role = {
   title: string;
   org: string;
   orgUrl?: string;
-  /** Path under `public/`. Without one, a monogram in `accent` is shown. */
+  /** Company logo under `public/`, taken from its LinkedIn page; without one, a monogram in `accent` is shown. */
   logo?: string;
   start: string;
   /** Omit for a current role; it renders as "Present". */
@@ -37,6 +37,7 @@ export const work: Role[] = [
   {
     title: "Software Engineer",
     org: "Toma",
+    logo: "/images/logos/toma.jpg",
     orgUrl: "https://www.linkedin.com/company/toma-ai/",
     start: "Jun 2025",
     location: "San Francisco, CA",
@@ -46,6 +47,7 @@ export const work: Role[] = [
   {
     title: "Software Engineer (Contract)",
     org: "Affil.ai (YC S24)",
+    logo: "/images/logos/affil.jpg",
     orgUrl: "https://www.linkedin.com/company/affilai/",
     start: "May 2025",
     end: "Jun 2025",
@@ -56,6 +58,7 @@ export const work: Role[] = [
   {
     title: "Product Manager",
     org: "Microsoft",
+    logo: "/images/logos/microsoft.jpg",
     orgUrl: "https://www.linkedin.com/company/microsoft/",
     start: "Aug 2023",
     end: "Apr 2025",
@@ -66,6 +69,7 @@ export const work: Role[] = [
   {
     title: "Software Engineer Intern",
     org: "Vivid",
+    logo: "/images/logos/vivid.jpg",
     orgUrl: "https://www.linkedin.com/company/vivid-ui/",
     start: "Mar 2023",
     end: "Jun 2023",
@@ -76,6 +80,7 @@ export const work: Role[] = [
   {
     title: "Product Manager Intern",
     org: "Microsoft",
+    logo: "/images/logos/microsoft.jpg",
     orgUrl: "https://www.linkedin.com/company/microsoft/",
     start: "Jun 2022",
     end: "Sep 2022",
@@ -86,8 +91,8 @@ export const work: Role[] = [
   {
     title: "Software Development Engineer Intern",
     org: "Amazon",
+    logo: "/images/logos/amazon.jpg",
     orgUrl: "https://www.linkedin.com/company/amazon/",
-    logo: "/images/amazon.jpeg",
     start: "Jun 2021",
     end: "Sep 2021",
     location: "Seattle, WA",
@@ -97,8 +102,8 @@ export const work: Role[] = [
   {
     title: "Future Engineer Intern",
     org: "Amazon",
+    logo: "/images/logos/amazon.jpg",
     orgUrl: "https://www.linkedin.com/company/amazon/",
-    logo: "/images/amazon.jpeg",
     start: "Jun 2020",
     end: "Sep 2020",
     location: "Seattle, WA (Remote)",
