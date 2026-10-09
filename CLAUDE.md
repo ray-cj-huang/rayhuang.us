@@ -82,7 +82,8 @@ public/           static assets; CNAME must stay `rayhuang.us`
 - Company logos in `public/images/logos/` come from each company's LinkedIn page (`og:image`), re-encoded as JPEG.
 - Icons follow the favicon "six files" practice: `src/app/favicon.ico` (16/32/48), `icon.png` (192),
   `apple-icon.png` (180, full bleed) and `manifest.ts` with 192/512 and a maskable 512 in `public/`.
-  They're renders of the scene's stingray on a turquoise tile; re-render rather than hand-draw if it changes.
+  Tab icons are transparent renders of the scene's stingray with a soft dark edge; home-screen ones sit on turquoise.
+  Re-render from the model rather than hand-draw if the stingray changes.
 - Accessibility: decorative images get `alt=""`, sections use `aria-labelledby`,
   and links that open a new tab use `rel="noreferrer"`.
 
