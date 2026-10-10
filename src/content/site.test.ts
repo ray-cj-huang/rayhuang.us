@@ -22,7 +22,7 @@ describe("site content", () => {
       site.url,
       site.contactUrl,
       ...socials.map((s) => s.href),
-      ...work.flatMap((r) => (r.orgUrl ? [r.orgUrl] : [])),
+      ...work.flatMap((r) => [r.orgUrl, r.website].filter((u) => u !== undefined)),
       ...education.map((e) => e.url),
     ];
     for (const url of urls) {

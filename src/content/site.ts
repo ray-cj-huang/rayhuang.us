@@ -4,6 +4,8 @@ export type Role = {
   title: string;
   org: string;
   orgUrl?: string;
+  /** The company's own site, for structured data; `orgUrl` stays the visible link. */
+  website?: string;
   /** Company logo under `public/`, taken from its LinkedIn page; without one, a monogram in `accent` is shown. */
   logo?: string;
   start: string;
@@ -49,6 +51,7 @@ export const work: Role[] = [
     org: "Toma",
     logo: "/images/logos/toma.jpg",
     orgUrl: "https://www.linkedin.com/company/toma-ai/",
+    website: "https://www.toma.com",
     start: "Jun 2025",
     location: "San Francisco, CA",
     summary: "Building AI coworkers for car dealerships.",

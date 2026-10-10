@@ -60,7 +60,7 @@ src/
   components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef + sand + layout, light-rays, marine-snow;
                   pure, unit-tested logic in boids.ts and palette.ts; seeded layout via random.ts
   content/site.ts all copy, links, roles, SEO name forms and description; edit here, not in components
-  content/structured-data.ts schema.org Person JSON-LD, derived from site.ts
+  content/structured-data.ts schema.org ProfilePage + Person JSON-LD, derived from site.ts
 public/           static assets; CNAME must stay `rayhuang.us`; llms.txt for AI crawlers
 .claude/skills/   project skills (see above)
 ```
@@ -100,7 +100,7 @@ GitHub Pages sets its own cache headers, so first-load speed comes from what we 
 
 ## Search (SEO and AI)
 
-- Metadata in `layout.tsx` and the JSON-LD `Person` in `page.tsx` are built from `site.ts`. Change names, title or description there.
+- Metadata in `layout.tsx` and the JSON-LD in `page.tsx` (a `ProfilePage` whose `mainEntity` is a `Person`) are built from `site.ts`. Change names, title or description there.
 - `site.alternateNames` lists the name forms people search for ("Ray Chi Jui Huang", "Ray CJ Huang").
 - JSON-LD puts the current role in `worksFor` and past employers and UCLA in `alumniOf`; `structured-data.test.ts` covers it.
 - `robots.ts` allows everyone and names AI crawlers explicitly. Don't block them.
@@ -124,6 +124,7 @@ GitHub Pages sets its own cache headers, so first-load speed comes from what we 
 - On `main`, `deploy` publishes `./out` to GitHub Pages once both pass.
   It uses its own `pages` concurrency group and never cancels a deploy in progress.
 - Actions are pinned to full commit SHAs with a version comment. Keep new ones pinned the same way.
+- Runners are pinned too (`ubuntu-24.04`, not `ubuntu-latest`), so an image migration never changes a build silently.
 - Jobs get least-privilege `permissions`, and checkout runs with `persist-credentials: false`.
 - Dependabot groups updates and waits out a 7-day cooldown on new releases.
 
