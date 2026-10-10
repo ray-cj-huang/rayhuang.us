@@ -33,6 +33,7 @@ Project skills live in `.claude/skills/`. Use them:
   Color tokens such as `--background`, `--muted` and `--accent` are defined once there, with a dark-mode override.
 - **Motion** (`motion/react`) for UI animation.
   Wrap scroll-in content in `<Reveal>` from `src/components/reveal.tsx` instead of hand-rolling `motion.div`s.
+  The hero is the exception: it uses the CSS `.rise` class so its text paints before hydration (see Performance).
 - **three.js via React Three Fiber and drei** for a fixed, full-page ocean (`src/components/ocean/`).
   It models an open Caribbean sand flat with two coral heads, where southern stingrays forage.
   Keep the seafloor sparse: rays favor open sand, and a busy floor competes with the content.
@@ -54,12 +55,13 @@ Project skills live in `.claude/skills/`. Use them:
 
 ```
 src/
-  app/            routes, layout, metadata, sitemap/robots, globals.css
+  app/            routes, layout + metadata, page (+ JSON-LD), sitemap/robots/manifest, icons, globals.css
   components/     sections.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
   components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef + sand + layout, light-rays, marine-snow;
                   pure, unit-tested logic in boids.ts and palette.ts; seeded layout via random.ts
-  content/site.ts all copy, links and roles; edit here, not in components
-public/           static assets; CNAME must stay `rayhuang.us`
+  content/site.ts all copy, links, roles, SEO name forms and description; edit here, not in components
+  content/structured-data.ts schema.org Person JSON-LD, derived from site.ts
+public/           static assets; CNAME must stay `rayhuang.us`; llms.txt for AI crawlers
 .claude/skills/   project skills (see above)
 ```
 
@@ -86,6 +88,24 @@ public/           static assets; CNAME must stay `rayhuang.us`
   Re-render from the model rather than hand-draw if the stingray changes.
 - Accessibility: decorative images get `alt=""`, sections use `aria-labelledby`,
   and links that open a new tab use `rel="noreferrer"`.
+
+## Performance
+
+GitHub Pages sets its own cache headers, so first-load speed comes from what we ship.
+
+- Never hide above-the-fold text behind JS. `<Reveal>` server-renders `opacity: 0`, so the hero uses CSS `.rise` instead.
+- `SceneBackdrop` mounts the ocean only after `load` and an idle callback; the three.js chunk is the biggest download.
+- Images are at most 3× their displayed size (e.g. a 40px logo ships at 120px). Check `ls -l public/images` after adding one.
+- Fonts come from `next/font`; only fonts used by LCP text are preloaded.
+
+## Search (SEO and AI)
+
+- Metadata in `layout.tsx` and the JSON-LD `Person` in `page.tsx` are built from `site.ts`. Change names, title or description there.
+- `site.alternateNames` lists the name forms people search for ("Ray Chi Jui Huang", "Ray CJ Huang").
+- JSON-LD puts the current role in `worksFor` and past employers and UCLA in `alumniOf`; `structured-data.test.ts` covers it.
+- `robots.ts` allows everyone and names AI crawlers explicitly. Don't block them.
+- `public/llms.txt` is a hand-written summary for LLMs. Update it when roles change; `site.test.ts` checks the names and email.
+- Validate after deploys with Google's Rich Results Test. Search Console and Bing Webmaster Tools are set up outside this repo.
 
 ## Comments
 

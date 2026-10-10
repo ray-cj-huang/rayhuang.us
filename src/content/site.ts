@@ -17,15 +17,25 @@ export type Role = {
 
 export const site = {
   name: "Ray Huang",
+  /** Other forms of the name people search for; fed to metadata and JSON-LD. */
+  alternateNames: ["Ray Chi Jui Huang", "Ray CJ Huang"],
+  jobTitle: "Software Engineer",
   handle: "ray / huang",
   url: "https://rayhuang.us",
   tagline: "Another day, another life :)",
-  description: "Ray Huang — software engineer at Toma building AI coworkers for automotive dealerships.",
+  title: "Ray Huang — Software Engineer at Toma",
+  description:
+    "Ray (Chi Jui) Huang is a software engineer at Toma building AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint. UCLA Computer Science.",
   email: "rayhuang.cj@gmail.com",
   avatar: "/images/ray.jpg",
   /** Where the "Get in touch" button links. */
   contactUrl: "https://www.linkedin.com/in/ray-cj-huang/",
 } as const;
+
+export const contact = {
+  heading: "Nice to meet you!",
+  lead: "Yap with me via",
+};
 
 export const socials: Link[] = [
   { label: "GitHub", href: "https://github.com/ray-cj-huang" },

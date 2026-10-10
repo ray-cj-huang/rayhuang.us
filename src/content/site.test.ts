@@ -40,4 +40,11 @@ describe("site content", () => {
       expect(role.orgUrl, role.org).toMatch(/^https:\/\/www\.linkedin\.com\/company\/[\w-]+\/$/);
     }
   });
+
+  test("llms.txt names Ray and every searchable name form", async () => {
+    const llms = await Bun.file(publicPath("llms.txt")).text();
+    for (const name of [site.name, ...site.alternateNames, site.email]) {
+      expect(llms, name).toContain(name);
+    }
+  });
 });

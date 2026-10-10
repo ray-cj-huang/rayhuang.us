@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/reveal";
-import { education, type Role, site, socials, work } from "@/content/site";
+import { contact, education, type Role, site, socials, work } from "@/content/site";
 
 function Section({
   id,
@@ -30,24 +30,26 @@ function Section({
   );
 }
 
+// The hero holds the LCP text, so it animates in with CSS straight from the HTML
+// instead of waiting for <Reveal> to hydrate.
 export function Hero() {
   return (
     <header className="flex min-h-[92svh] items-end pb-16 md:items-center md:pb-0">
       <div className="mx-auto w-full max-w-4xl px-6">
-        <Reveal>
+        <div className="rise">
           <p className="font-mono text-sm text-muted">{site.handle}</p>
           <h1 className="mt-3 text-5xl font-semibold tracking-tight sm:text-7xl">
             Hi, I&apos;m {site.name.split(" ")[0]}.
           </h1>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <p className="mt-6 max-w-md text-lg text-muted sm:text-xl">{site.tagline}</p>
-        </Reveal>
-        <Reveal delay={0.2} className="mt-10 flex flex-wrap gap-3">
+        </div>
+        <p className="rise mt-6 max-w-md text-lg text-muted [animation-delay:100ms] sm:text-xl">
+          {site.tagline}
+        </p>
+        <div className="rise mt-10 flex flex-wrap gap-3 [animation-delay:200ms]">
           <a className="btn btn-primary" href={site.contactUrl} target="_blank" rel="noreferrer">
             Get in touch
           </a>
-        </Reveal>
+        </div>
       </div>
     </header>
   );
@@ -107,7 +109,7 @@ function RoleCard({ role }: { role: Role }) {
 
 export function Experience() {
   return (
-    <Section id="experience" title="Experience">
+    <Section id="experience" title="Experience" className="pb-10">
       <div className="grid gap-5">
         {work.map((role, i) => (
           <Reveal key={`${role.org}-${role.title}`} delay={Math.min(i, 3) * 0.05}>
@@ -121,7 +123,7 @@ export function Experience() {
 
 export function Education() {
   return (
-    <Section id="education" title="Education" className="pb-8">
+    <Section id="education" title="Education" className="pt-10 pb-0">
       {education.map((ed) => (
         <Reveal key={ed.school} className="card py-4">
           <div className="flex items-center gap-4">
@@ -148,7 +150,7 @@ export function Education() {
 
 export function Contact() {
   return (
-    <footer id="contact" className="mx-auto w-full max-w-4xl px-6 pt-8 pb-16">
+    <footer id="contact" className="mx-auto w-full max-w-4xl px-6 pt-10 pb-16">
       <Reveal className="card flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         <Image
           src={site.avatar}
@@ -158,12 +160,13 @@ export function Contact() {
           className="size-24 rounded-full object-cover"
         />
         <div>
-          <h2 className="text-2xl font-semibold">Let&apos;s build something.</h2>
+          <h2 className="text-2xl font-semibold">{contact.heading}</h2>
           <p className="mt-2 text-muted">
-            Reach me at{" "}
+            {contact.lead}{" "}
             <a className="link" href={`mailto:${site.email}`}>
-              {site.email}
+              email
             </a>
+            .
           </p>
           <ul className="mt-4 flex flex-wrap gap-4 text-sm">
             {socials.map((s) => (

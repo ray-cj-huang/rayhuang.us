@@ -4,20 +4,29 @@ import { site } from "@/content/site";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Mono only styles small labels, never the LCP text, so it needn't block first paint.
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
-  title: { default: site.name, template: `%s · ${site.name}` },
+  title: { default: site.title, template: `%s · ${site.name}` },
   description: site.description,
+  applicationName: site.name,
+  authors: [{ name: site.name, url: site.url }],
+  creator: site.name,
+  keywords: [site.name, ...site.alternateNames, site.jobTitle, "Toma", "Microsoft", "UCLA"],
+  alternates: { canonical: "/" },
   openGraph: {
-    type: "website",
+    type: "profile",
     url: site.url,
-    title: site.name,
+    siteName: site.name,
+    title: site.title,
     description: site.description,
-    images: [{ url: site.avatar, width: 400, height: 400, alt: site.name }],
+    firstName: "Ray",
+    lastName: "Huang",
+    images: [{ url: site.avatar, width: 288, height: 288, alt: site.name }],
   },
-  twitter: { card: "summary", title: site.name, description: site.description },
+  twitter: { card: "summary", title: site.title, description: site.description },
 };
 
 export const viewport: Viewport = {
