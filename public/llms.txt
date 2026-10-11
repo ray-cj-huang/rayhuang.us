@@ -1,12 +1,12 @@
 # Ray Huang
 
-> Ray Huang (also Ray Chi Jui Huang, Ray CJ Huang) is a software engineer at Toma in San Francisco, building AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot automation and PowerPoint, and an intern at Amazon. UCLA Computer Science graduate.
+> Ray Huang (also Ray Chi Jui Huang, Ray CJ Huang) is a software engineer at Toma in San Francisco, building voice AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot automation and PowerPoint, and an intern at Amazon. UCLA Computer Science graduate.
 
 Outside work: skiing, cycling, climbing, tennis, volleyball, coffee and squats.
 
 ## Experience
 
-- Toma: Software Engineer, Jun 2025 to present, San Francisco, CA. Building AI coworkers for car dealerships.
+- Toma: Software Engineer, Jun 2025 to present, San Francisco, CA. Building voice AI coworkers for car dealerships.
 - Affil.ai (YC S24): Software Engineer (Contract), May 2025 to Jun 2025. Built the platform for affiliate networks.
 - Microsoft: Product Manager, Aug 2023 to Apr 2025, Mountain View, CA. Built Copilot automation and reduced cost in PowerPoint.
 - Vivid: Software Engineer Intern, Mar 2023 to Jun 2023, New York, NY.

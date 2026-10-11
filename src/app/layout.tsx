@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   creator: site.name,
   keywords: [site.name, ...site.alternateNames, site.jobTitle, "Toma", "Microsoft", "UCLA"],
   alternates: { canonical: "/" },
+  // Search Console ownership for the https://rayhuang.us/ URL-prefix property; the DNS is managed outside this repo.
+  verification: { google: "CZDnchsLSK8epzipSyXv6zQv_G5-rt_CFgCWDpqBP6M" },
   openGraph: {
     type: "profile",
     url: site.url,

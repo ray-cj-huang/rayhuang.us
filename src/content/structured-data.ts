@@ -39,7 +39,7 @@ export function profilePageJsonLd() {
       ...pastOrgs.map(organization),
     ],
     hasOccupation: occupations.map((name) => ({ "@type": "Occupation", name })),
-    knowsAbout: ["Software engineering", "AI agents", "Product management"],
+    knowsAbout: ["Software engineering", "Voice AI", "AI agents", "Product management"],
     sameAs: socials.map((s) => s.href),
   };
 
