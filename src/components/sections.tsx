@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { BrandIcon } from "@/components/brand-icon";
 import { Reveal } from "@/components/reveal";
 import { contact, education, type Role, site, socials, work } from "@/content/site";
 
@@ -30,8 +31,6 @@ function Section({
   );
 }
 
-// The hero holds the LCP text, so it animates in with CSS straight from the HTML
-// instead of waiting for <Reveal> to hydrate.
 export function Hero() {
   return (
     <header className="flex min-h-[92svh] items-end pb-16 md:items-center md:pb-0">
@@ -164,23 +163,41 @@ export function Contact() {
           <p className="mt-2 text-muted">
             {contact.lead}{" "}
             <a className="link" href={`mailto:${site.email}`}>
-              email
-            </a>
-            .
+              {site.email}
+            </a>{" "}
+            <span className="block whitespace-nowrap sm:inline">{contact.invite}</span>
           </p>
-          <ul className="mt-4 flex flex-wrap gap-4 text-sm">
-            {socials.map((s) => (
-              <li key={s.href}>
-                <a className="link" href={s.href} target="_blank" rel="noreferrer">
-                  {s.label}
-                </a>
-              </li>
-            ))}
+          <ul className="mt-4 flex flex-wrap gap-5 text-sm">
+            {socials
+              .filter((s) => s.icon)
+              .map((s) => (
+                <li key={s.href}>
+                  <a
+                    className="inline-flex items-center gap-2 font-medium hover:opacity-70"
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {s.icon && <BrandIcon name={s.icon} className="size-4" />}
+                    {s.label}
+                  </a>
+                </li>
+              ))}
           </ul>
         </div>
       </Reveal>
       <p className="card mx-auto mt-10 w-fit rounded-full px-3 py-1 text-center font-mono text-xs text-muted">
         © {new Date().getFullYear()} {site.name}
+        {socials
+          .filter((s) => !s.icon)
+          .map((s) => (
+            <span key={s.href}>
+              {" · "}
+              <a className="hover:underline" href={s.href} target="_blank" rel="noreferrer">
+                {s.label}
+              </a>
+            </span>
+          ))}
       </p>
     </footer>
   );

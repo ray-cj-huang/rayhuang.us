@@ -41,6 +41,10 @@ describe("site content", () => {
     }
   });
 
+  test("role one-liners have no trailing period", () => {
+    for (const role of work) expect(role.summary, role.org).not.toEndWith(".");
+  });
+
   test("llms.txt names Ray and every searchable name form", async () => {
     const llms = await Bun.file(publicPath("llms.txt")).text();
     for (const name of [site.name, ...site.alternateNames, site.email]) {

@@ -56,7 +56,7 @@ Project skills live in `.claude/skills/`. Use them:
 ```
 src/
   app/            routes, layout + metadata, page (+ JSON-LD), sitemap/robots/manifest, icons, globals.css
-  components/     sections.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
+  components/     sections.tsx, brand-icon.tsx (server); reveal.tsx, scene-backdrop.tsx (client)
   components/ocean/ the 3D scene: ocean-scene, stingray, fish-school + species, reef + sand + layout, light-rays, marine-snow;
                   pure, unit-tested logic in boids.ts and palette.ts; seeded layout via random.ts
   content/site.ts all copy, links, roles, SEO name forms and description; edit here, not in components
@@ -104,6 +104,7 @@ GitHub Pages sets its own cache headers, so first-load speed comes from what we 
 - `site.alternateNames` lists the name forms people search for ("Ray Chi Jui Huang", "Ray CJ Huang").
 - JSON-LD puts the current role in `worksFor` and past employers and UCLA in `alumniOf`; `structured-data.test.ts` covers it.
 - `robots.ts` allows everyone and names AI crawlers explicitly. Don't block them.
+- The link-preview image is `src/app/og.png/route.tsx`, rendered at build time to `/og.png`. It isn't `opengraph-image.tsx` because that output has no extension, so Pages would serve the wrong Content-Type.
 - `public/llms.txt` is a hand-written summary for LLMs. Update it when roles change; `site.test.ts` checks the names and email.
 - Validate after deploys with Google's Rich Results Test. Search Console and Bing Webmaster Tools are set up outside this repo.
 
