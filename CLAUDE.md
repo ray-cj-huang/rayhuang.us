@@ -105,6 +105,7 @@ GitHub Pages sets its own cache headers, so first-load speed comes from what we 
 - JSON-LD puts the current role in `worksFor` and past employers and UCLA in `alumniOf`; `structured-data.test.ts` covers it.
 - `robots.ts` allows everyone and names AI crawlers explicitly. Don't block them.
 - The link-preview image is `src/app/og.png/route.tsx`, rendered at build time to `/og.png`. It isn't `opengraph-image.tsx` because that output has no extension, so Pages would serve the wrong Content-Type.
+- Each deploy pings IndexNow (Bing, DuckDuckGo, ChatGPT search). The key in `ci.yml` must match `public/<key>.txt`; a test checks it.
 - `public/llms.txt` is a hand-written summary for LLMs. Update it when roles change; `site.test.ts` checks the names and email.
 - Validate after deploys with Google's Rich Results Test. Search Console and Bing Webmaster Tools are set up outside this repo.
 

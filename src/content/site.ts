@@ -23,6 +23,8 @@ export type Role = {
 
 export const site = {
   name: "Ray Huang",
+  /** Full name, shown in the footer so search engines see it as visible text. */
+  fullName: "Ray Chi Jui Huang",
   alternateNames: ["Ray Chi Jui Huang", "Ray CJ Huang"],
   jobTitle: "Software Engineer",
   handle: "ray / huang",

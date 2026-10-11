@@ -45,6 +45,13 @@ describe("site content", () => {
     for (const role of work) expect(role.summary, role.org).not.toEndWith(".");
   });
 
+  test("the IndexNow key in CI matches the key file Pages serves", async () => {
+    const ci = await Bun.file(join(import.meta.dir, "../../.github/workflows/ci.yml")).text();
+    const key = ci.match(/INDEXNOW_KEY: (\w+)/)?.[1] ?? "";
+    expect(key).toMatch(/^[a-f0-9]{32}$/);
+    expect(await Bun.file(publicPath(`${key}.txt`)).text()).toBe(key);
+  });
+
   test("llms.txt names Ray and every searchable name form", async () => {
     const llms = await Bun.file(publicPath("llms.txt")).text();
     for (const name of [site.name, ...site.alternateNames, site.email]) {

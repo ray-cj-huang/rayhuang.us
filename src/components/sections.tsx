@@ -187,7 +187,7 @@ export function Contact() {
         </div>
       </Reveal>
       <p className="card mx-auto mt-10 w-fit rounded-full px-3 py-1 text-center font-mono text-xs text-muted">
-        © {new Date().getFullYear()} {site.name}
+        © {new Date().getFullYear()} {site.fullName}
         {socials
           .filter((s) => !s.icon)
           .map((s) => (

@@ -76,3 +76,13 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      # Tell Bing (and so DuckDuckGo and ChatGPT search) the site changed: https://www.indexnow.org/documentation
+      # The key isn't a secret; it only proves we own the host, via public/<key>.txt.
+      - name: Ping IndexNow
+        continue-on-error: true
+        env:
+          INDEXNOW_KEY: 335fc166a301aaeecb9c7bdf09edbce1
+        run: |
+          curl -fsS -X POST https://api.indexnow.org/indexnow \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "{\"host\":\"rayhuang.us\",\"key\":\"$INDEXNOW_KEY\",\"keyLocation\":\"https://rayhuang.us/$INDEXNOW_KEY.txt\",\"urlList\":[\"https://rayhuang.us/\",\"https://rayhuang.us/llms.txt\"]}"
