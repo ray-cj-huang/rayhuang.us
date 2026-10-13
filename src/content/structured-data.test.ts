@@ -1,10 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { profilePageJsonLd } from "./structured-data";
+import { homeJsonLd } from "./structured-data";
 
-describe("profilePageJsonLd", () => {
-  const page = profilePageJsonLd();
+describe("homeJsonLd", () => {
+  const [website, page] = homeJsonLd()["@graph"];
   const person = page.mainEntity;
   const names = (orgs: { name: string }[]) => orgs.map((o) => o.name);
+
+  test("names the site Ray Huang, so Google shows that instead of the domain", () => {
+    expect(website["@type"]).toBe("WebSite");
+    expect(website.name).toBe("Ray Huang");
+  });
 
   test("is a ProfilePage about Ray, which Google can show as a rich result", () => {
     expect(page["@type"]).toBe("ProfilePage");

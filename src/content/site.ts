@@ -32,7 +32,7 @@ export const site = {
   tagline: "Building @ Toma, powered by coffee and squats",
   title: "Ray Huang — Software Engineer at Toma",
   description:
-    "Ray (Chi Jui) Huang is a software engineer at Toma building voice AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint, and an intern at Amazon. UCLA Computer Science.",
+    "Ray Huang is a software engineer at Toma building voice AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint, and an intern at Amazon. UCLA Computer Science.",
   email: "rayhuang.cj@gmail.com",
   avatar: "/images/ray.jpg",
   contactUrl: "https://www.linkedin.com/in/ray-cj-huang/",
