@@ -30,7 +30,7 @@ export const site = {
   handle: "ray / huang",
   url: "https://rayhuang.us",
   tagline: "Building @ Toma, powered by coffee and squats",
-  title: "Ray Huang — Software Engineer at Toma",
+  title: "Ray Huang",
   description:
     "Ray Huang is a software engineer at Toma building voice AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint, and an intern at Amazon. UCLA Computer Science.",
   email: "rayhuang.cj@gmail.com",
