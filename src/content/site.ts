@@ -29,7 +29,8 @@ export const site = {
   jobTitle: "Software Engineer",
   handle: "ray / huang",
   url: "https://rayhuang.us",
-  tagline: "Building something new, powered by coffee and squats",
+  /** Hero lines; each renders on its own line so the break falls after the comma. */
+  tagline: ["Building something new,", "powered by coffee and squats"],
   title: "Ray Huang",
   description:
     "Ray Huang is a software engineer in San Francisco who built voice AI coworkers for car dealerships at Toma. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint, and an intern at Amazon. UCLA Computer Science.",

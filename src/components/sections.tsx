@@ -42,7 +42,11 @@ export function Hero() {
           </h1>
         </div>
         <p className="rise mt-6 max-w-md text-lg text-muted [animation-delay:100ms] sm:text-xl">
-          {site.tagline}
+          {site.tagline.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
         </p>
         <div className="rise mt-10 flex flex-wrap gap-3 [animation-delay:200ms]">
           <a className="btn btn-primary" href={site.contactUrl} target="_blank" rel="noreferrer">
