@@ -14,14 +14,15 @@ describe("homeJsonLd", () => {
   test("is a ProfilePage about Ray, which Google can show as a rich result", () => {
     expect(page["@type"]).toBe("ProfilePage");
     expect(person["@type"]).toBe("Person");
-    expect(person.worksFor[0]).toMatchObject({ name: "Toma", url: "https://www.toma.com" });
   });
 
-  test("lists the current employer and past ones", () => {
-    expect(names(person.worksFor)).toEqual(["Toma"]);
+  test("lists past employers, with no current one", () => {
+    expect(person.worksFor).toEqual([]);
+    expect(person.alumniOf).toContainEqual(
+      expect.objectContaining({ name: "Toma", url: "https://www.toma.com" }),
+    );
     expect(names(person.alumniOf)).toContain("Microsoft");
     expect(names(person.alumniOf)).toContain("University of California, Los Angeles");
-    expect(names(person.alumniOf)).not.toContain("Toma");
   });
 
   test("past employers appear once each", () => {

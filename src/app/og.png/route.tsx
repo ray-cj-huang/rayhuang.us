@@ -34,7 +34,9 @@ export async function GET() {
     >
       <div style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ fontSize: 92, letterSpacing: -3 }}>{site.name}</div>
-        <div style={{ fontSize: 40, marginTop: 12, color: "#475569" }}>{`${site.jobTitle} at Toma`}</div>
+        <div
+          style={{ fontSize: 40, marginTop: 12, color: "#475569" }}
+        >{`${site.jobTitle} in San Francisco`}</div>
         <div style={{ display: "flex", alignItems: "center", marginTop: 56, fontSize: 30, color: "#2f4fc4" }}>
           {/* biome-ignore lint/performance/noImgElement: ImageResponse renders plain <img>, not next/image */}
           <img src={ray} width={56} height={56} alt="" style={{ marginRight: 16 }} />

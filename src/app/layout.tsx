@@ -26,7 +26,9 @@ export const metadata: Metadata = {
     description: site.description,
     firstName: "Ray",
     lastName: "Huang",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: `${site.name}, ${site.jobTitle} at Toma` }],
+    images: [
+      { url: "/og.png", width: 1200, height: 630, alt: `${site.name}, ${site.jobTitle} in San Francisco` },
+    ],
   },
   twitter: {
     card: "summary_large_image",

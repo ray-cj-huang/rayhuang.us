@@ -29,10 +29,10 @@ export const site = {
   jobTitle: "Software Engineer",
   handle: "ray / huang",
   url: "https://rayhuang.us",
-  tagline: "Building @ Toma, powered by coffee and squats",
+  tagline: "Building something new, powered by coffee and squats",
   title: "Ray Huang",
   description:
-    "Ray Huang is a software engineer at Toma building voice AI coworkers for car dealerships. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint, and an intern at Amazon. UCLA Computer Science.",
+    "Ray Huang is a software engineer in San Francisco who built voice AI coworkers for car dealerships at Toma. Previously a product manager at Microsoft for nearly two years, working on Copilot and PowerPoint, and an intern at Amazon. UCLA Computer Science.",
   email: "rayhuang.cj@gmail.com",
   avatar: "/images/ray.jpg",
   contactUrl: "https://www.linkedin.com/in/ray-cj-huang/",
@@ -58,8 +58,9 @@ export const work: Role[] = [
     orgUrl: "https://www.linkedin.com/company/toma-ai/",
     website: "https://www.toma.com",
     start: "Jun 2025",
+    end: "Oct 2026",
     location: "San Francisco, CA",
-    summary: "Building voice AI coworkers for car dealerships",
+    summary: "Built voice AI coworkers for car dealerships",
     accent: "#14b8a6",
   },
   {
